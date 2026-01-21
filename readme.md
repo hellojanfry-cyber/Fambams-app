@@ -21,7 +21,10 @@ This is a fully functional Next.js app with:
 4. Repository settings:
    - Name: `fambams-app`
    - Description: "Family schedule sharing app"
+
    - Make it **Public**
+
+
    - Do NOT initialize with README (you already have one)
 5. Click "Create repository"
 
