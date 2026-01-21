@@ -69,7 +69,7 @@ export default function FamBamsApp() {
   const users = {
     'sarah@example.com': { type: 'parent', familyId: 'sarah-family' },
     'mike@example.com': { type: 'parent', familyId: 'mike-family' },
-    'grandma@example.com': { type: 'viewer', allowedFamilies: ['sarah-family'], relationship: 'grandmother' },
+    'grandma@example.com': { type: 'viewer', allowedFamilies: ['sarah-family', 'mike-family'], relationship: 'grandmother' },
     'mike-mil@example.com': { type: 'viewer', allowedFamilies: ['mike-family'], relationship: 'grandmother' },
   };
 
