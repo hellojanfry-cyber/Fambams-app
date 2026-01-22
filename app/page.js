@@ -152,7 +152,7 @@ export default function FamBamsApp() {
       <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden">
         <div className="bg-gradient-to-r from-orange-400 via-red-400 to-pink-400 p-8 text-center">
           <div className="flex justify-center mb-4">
-            <div className="bg-white p-4 rounded-2xl shadow-lg"><img src="/logo.png" alt="FamBams Logo" className="w-44 h-auto" />
+            <div className="bg-white p-4 rounded-2xl shadow-lg"><img src="./logo.png" alt="FamBams Logo" className="w-44 h-auto" />
                           </div>
           </div>
           <h2 className="text-white text-xl font-bold mt-4">Family Schedule</h2>
