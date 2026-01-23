@@ -77,7 +77,7 @@ export default function FamBamsApp() {
   const InviteModal = ({ family }) => (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
       <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden">
-        <div className="bg-gradient-to-r from-orange-400 via-red-400 to-pink-400 text-white p-6">
+        <div className="bg-gradient-to-r from-yellow-400 via-orange-500 to-pink-500 text-white p-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-2">
               <Heart className="w-6 h-6" />
@@ -139,7 +139,7 @@ export default function FamBamsApp() {
               setInviteEmail('');
               setInviteRelationship('grandmother');
             }}
-            className="w-full bg-gradient-to-r from-orange-400 to-pink-400 text-white font-bold py-4 rounded-xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all"
+            className="w-full bg-gradient-to-r from-cyan-400 to-blue-500 text-white font-bold py-4 rounded-xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all"
           >
             Send Invitation
           </button>
@@ -151,7 +151,7 @@ export default function FamBamsApp() {
   const AuthScreen = () => (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 flex items-center justify-center p-4">
       <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden">
-        <div className="bg-gradient-to-r from-orange-400 via-red-400 to-pink-400 p-8 text-center">
+        <div className="bg-gradient-to-r from-yellow-400 via-orange-500 to-pink-500 p-8 text-center">
           <div className="flex justify-center mb-4">
             <div className="bg-white p-4 rounded-2xl shadow-lg"> <img src="https://i.postimg.cc/L5Ggh0Tt/Logo.png" alt="FamBams Logo" style={{width: '176px', height: 'auto'}} />
                           </div>
@@ -212,7 +212,7 @@ export default function FamBamsApp() {
                 setCurrentScreen(user.type === 'parent' ? 'parent-dashboard' : 'viewer-schedule');
               }
             }}
-            className="w-full bg-gradient-to-r from-orange-400 via-red-400 to-pink-400 text-white font-bold py-4 rounded-xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all"
+            className="w-full bg-gradient-to-r from-yellow-400 via-orange-500 to-pink-500 text-white font-bold py-4 rounded-xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all"
           >
             {userType === 'parent' ? 'Manage My Family' : 'View Schedules'}
           </button>
@@ -235,7 +235,7 @@ export default function FamBamsApp() {
 
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 pb-6">
-        <div className="bg-gradient-to-r from-orange-400 via-red-400 to-pink-400 text-white p-6 rounded-b-3xl shadow-lg">
+        <div className="bg-gradient-to-r from-yellow-400 via-orange-500 to-pink-500 text-white p-6 rounded-b-3xl shadow-lg">
           <h1 className="text-2xl font-bold mb-2">{family.name}</h1>
           <p className="text-sm opacity-90">Manage your family schedule</p>
         </div>
@@ -268,7 +268,7 @@ export default function FamBamsApp() {
             
             <button 
               onClick={() => setShowInviteModal(true)}
-              className="w-full bg-gradient-to-r from-orange-400 to-pink-400 text-white font-semibold py-3 rounded-xl shadow hover:shadow-lg transition-all flex items-center justify-center space-x-2"
+              className="w-full bg-gradient-to-r from-cyan-400 to-blue-500 text-white font-semibold py-3 rounded-xl shadow hover:shadow-lg transition-all flex items-center justify-center space-x-2"
             >
               <Send className="w-5 h-5" />
               <span>Send New Invitation</span>
@@ -350,7 +350,7 @@ export default function FamBamsApp() {
 
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 pb-6">
-        <div className="bg-gradient-to-r from-orange-400 via-red-400 to-pink-400 text-white p-6 rounded-b-3xl shadow-lg">
+        <div className="bg-gradient-to-r from-yellow-400 via-orange-500 to-pink-500 text-white p-6 rounded-b-3xl shadow-lg">
           <div className="flex items-center space-x-2 mb-2">
             <Heart className="w-6 h-6" />
             <h1 className="text-2xl font-bold">Welcome, {viewerRelationship}!</h1>
@@ -516,9 +516,9 @@ export default function FamBamsApp() {
                     !day 
                       ? 'border-transparent' 
                       : isToday(day)
-                      ? 'border-orange-400 bg-orange-50'
+                      ? 'border-yellow-400 bg-yellow-100'
                       : hasEvents
-                      ? 'border-blue-200 bg-blue-50 cursor-pointer hover:bg-blue-100'
+                      ? 'border-cyan-300 bg-cyan-50 cursor-pointer hover:bg-blue-100'
                       : 'border-gray-200 bg-white'
                   }`}
                 >
@@ -534,7 +534,7 @@ export default function FamBamsApp() {
                           {dayEvents.slice(0, 3).map((event, idx) => (
                             <div
                               key={idx}
-                              className="w-1.5 h-1.5 rounded-full bg-gradient-to-r from-orange-400 to-pink-400"
+                              className="w-1.5 h-1.5 rounded-full bg-gradient-to-r from-cyan-400 to-blue-500"
                             />
                           ))}
                         </div>
@@ -587,7 +587,7 @@ export default function FamBamsApp() {
             <h3 className="font-bold text-gray-800 text-lg mt-1">{event.activity}</h3>
           </div>
           <div className="text-right">
-            <span className="bg-gradient-to-r from-orange-400 to-pink-400 text-white px-3 py-1 rounded-full text-sm font-semibold block">
+            <span className="bg-gradient-to-r from-cyan-400 to-blue-500 text-white px-3 py-1 rounded-full text-sm font-semibold block">
               {event.kidName}
             </span>
             {showFamily && (
