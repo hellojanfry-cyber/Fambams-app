@@ -355,7 +355,7 @@ export default function FamBamsApp() {
             <Heart className="w-6 h-6 text-pink-600" />
             <h1 className="text-2xl font-bold">Welcome, {viewerRelationship}!</h1>
           </div>
-          <p className="text-sm opacity-90 mb-3">View your grandkids activities</p>
+          <p className="text-sm opacity-90 mb-3 text-red-700">View your grandkids activities</p>
 
           <div className="bg-orange-600/90 backdrop-blur rounded-xl p-3">
             <p className="text-xs font-semibold mb-2 opacity-90 text-gray-900">Youre viewing schedules for:</p>
