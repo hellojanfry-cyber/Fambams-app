@@ -80,7 +80,7 @@ export default function FamBamsApp() {
         <div className="bg-gradient-to-r from-yellow-400 via-orange-500 to-pink-500 text-white p-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-2">
-              <Heart className="w-6 h-6" />
+             <Heart className="w-6 h-6" />
               <h2 className="text-xl font-bold">Invite Family Member</h2>
             </div>
             <button 
@@ -352,13 +352,13 @@ export default function FamBamsApp() {
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 pb-6">
         <div className="bg-gradient-to-r from-yellow-400 via-orange-500 to-pink-500 text-white p-6 rounded-b-3xl shadow-lg">
           <div className="flex items-center space-x-2 mb-2">
-            <Heart className="w-6 h-6" />
+            <Heart className="w-6 h-6 text-pink-600" />
             <h1 className="text-2xl font-bold">Welcome, {viewerRelationship}!</h1>
           </div>
           <p className="text-sm opacity-90 mb-3">View your grandkids activities</p>
 
           <div className="bg-orange-600/90 backdrop-blur rounded-xl p-3">
-            <p className="text-xs font-semibold mb-2 opacity-90">Youre viewing schedules for:</p>
+            <p className="text-xs font-semibold mb-2 opacity-90 text-gray-900">Youre viewing schedules for:</p>
             {allowedFamilies.map((family, idx) => (
               <div key={idx} className="flex items-center space-x-2 mb-1">
                 <Users className="w-4 h-4" />
