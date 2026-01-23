@@ -357,7 +357,7 @@ export default function FamBamsApp() {
           </div>
           <p className="text-sm opacity-90 mb-3">View your grandkids activities</p>
 
-          <div className="bg-white/20 backdrop-blur rounded-xl p-3">
+          <div className="bg-orange-600/90 backdrop-blur rounded-xl p-3">
             <p className="text-xs font-semibold mb-2 opacity-90">Youre viewing schedules for:</p>
             {allowedFamilies.map((family, idx) => (
               <div key={idx} className="flex items-center space-x-2 mb-1">
