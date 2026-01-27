@@ -16,7 +16,6 @@ export default function FamBamsApp() {
   const [inviteEmail, setInviteEmail] = useState('');
   const [inviteRelationship, setInviteRelationship] = useState('grandmother');
   const [newChildName, setNewChildName] = useState('');
-  const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [selectedPhoto, setSelectedPhoto] = useState(null);
   const [photoPreview, setPhotoPreview] = useState(null);
 
@@ -83,7 +82,6 @@ export default function FamBamsApp() {
     const file = e.target.files[0];
     if (file) {
       setSelectedPhoto(file);
-      // Create preview
       const reader = new FileReader();
       reader.onloadend = () => {
         setPhotoPreview(reader.result);
@@ -92,56 +90,15 @@ export default function FamBamsApp() {
     }
   };
 
-  const uploadPhotoToFirebase = async (file, childName) => {
-    if (!file) return null;
-    
-    try {
-      setUploadingPhoto(true);
-      
-      // Dynamic import of Firebase to avoid build issues
-      const { storage } = await import('../lib/firebase');
-      const { ref, uploadBytes, getDownloadURL } = await import('firebase/storage');
-      
-      // Create a unique filename
-      const timestamp = Date.now();
-      const filename = `children/${loggedInUser.familyId}/${childName}-${timestamp}.jpg`;
-      const storageRef = ref(storage, filename);
-      
-      // Upload the file
-      await uploadBytes(storageRef, file);
-      
-      // Get the download URL
-      const downloadURL = await getDownloadURL(storageRef);
-      return downloadURL;
-    } catch (error) {
-      console.error('Error uploading photo:', error);
-      alert('Failed to upload photo. Please try again.');
-      return null;
-    } finally {
-      setUploadingPhoto(false);
-    }
-  };
-
-  const handleAddChild = async () => {
+  const handleAddChild = () => {
     if (!newChildName.trim()) {
       alert('Please enter a child name');
       return;
     }
 
-    let photoURL = 'https://via.placeholder.com/80';
+    // For now, just show a message that the feature is coming soon
+    alert(`Child "${newChildName}" will be added!\n\nNote: Photo upload feature will be enabled in the next update.`);
     
-    if (selectedPhoto) {
-      const uploadedURL = await uploadPhotoToFirebase(selectedPhoto, newChildName);
-      if (uploadedURL) {
-        photoURL = uploadedURL;
-      }
-    }
-
-    // Here you would normally save to your database
-    // For now, we'll just show a success message
-    alert(`Child added: ${newChildName}\nPhoto URL: ${photoURL}`);
-    
-    // Reset form
     setNewChildName('');
     setSelectedPhoto(null);
     setPhotoPreview(null);
@@ -225,10 +182,10 @@ export default function FamBamsApp() {
                 >
                   <Upload className="w-10 h-10 text-gray-400" />
                   <span className="text-sm font-semibold text-gray-600">
-                    Click to upload photo
+                    Click to select photo
                   </span>
                   <span className="text-xs text-gray-500">
-                    JPG, PNG (Max 5MB)
+                    (Upload feature coming soon)
                   </span>
                 </label>
               </div>
@@ -237,10 +194,10 @@ export default function FamBamsApp() {
 
           <button 
             onClick={handleAddChild}
-            disabled={uploadingPhoto || !newChildName.trim()}
+            disabled={!newChildName.trim()}
             className="w-full bg-gradient-to-r from-cyan-400 to-blue-500 text-white font-bold py-4 rounded-xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
           >
-            {uploadingPhoto ? 'Uploading Photo...' : 'Add Child'}
+            Add Child
           </button>
         </div>
       </div>
