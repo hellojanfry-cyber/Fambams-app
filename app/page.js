@@ -3,6 +3,8 @@
 import Image from 'next/image';
 import React, { useState } from 'react';
 import { Calendar, Clock, MapPin, Upload, ChevronLeft, ChevronRight, Plus, Send, Users, Eye, X, Heart } from 'lucide-react';
+import { storage } from '../lib/firebase';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 
 export default function FamBamsApp() {
   const [currentScreen, setCurrentScreen] = useState('auth');
@@ -12,8 +14,13 @@ export default function FamBamsApp() {
   const [hoveredDay, setHoveredDay] = useState(null);
   const [loggedInUser, setLoggedInUser] = useState(null);
   const [showInviteModal, setShowInviteModal] = useState(false);
+  const [showAddChildModal, setShowAddChildModal] = useState(false);
   const [inviteEmail, setInviteEmail] = useState('');
   const [inviteRelationship, setInviteRelationship] = useState('grandmother');
+  const [newChildName, setNewChildName] = useState('');
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  const [selectedPhoto, setSelectedPhoto] = useState(null);
+  const [photoPreview, setPhotoPreview] = useState(null);
 
   const relationshipOptions = [
     { value: 'grandmother', label: 'Grandmother' },
@@ -73,6 +80,169 @@ export default function FamBamsApp() {
     'grandma@example.com': { type: 'viewer', allowedFamilies: ['sarah-family', 'mike-family'], relationship: 'grandmother' },
     'mike-mil@example.com': { type: 'viewer', allowedFamilies: ['mike-family'], relationship: 'grandmother' },
   };
+
+  const handlePhotoSelect = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setSelectedPhoto(file);
+      // Create preview
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setPhotoPreview(reader.result);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const uploadPhotoToFirebase = async (file, childName) => {
+    if (!file) return null;
+    
+    try {
+      setUploadingPhoto(true);
+      // Create a unique filename
+      const timestamp = Date.now();
+      const filename = `children/${loggedInUser.familyId}/${childName}-${timestamp}.jpg`;
+      const storageRef = ref(storage, filename);
+      
+      // Upload the file
+      await uploadBytes(storageRef, file);
+      
+      // Get the download URL
+      const downloadURL = await getDownloadURL(storageRef);
+      return downloadURL;
+    } catch (error) {
+      console.error('Error uploading photo:', error);
+      alert('Failed to upload photo. Please try again.');
+      return null;
+    } finally {
+      setUploadingPhoto(false);
+    }
+  };
+
+  const handleAddChild = async () => {
+    if (!newChildName.trim()) {
+      alert('Please enter a child name');
+      return;
+    }
+
+    let photoURL = 'https://via.placeholder.com/80';
+    
+    if (selectedPhoto) {
+      const uploadedURL = await uploadPhotoToFirebase(selectedPhoto, newChildName);
+      if (uploadedURL) {
+        photoURL = uploadedURL;
+      }
+    }
+
+    // Here you would normally save to your database
+    // For now, we'll just show a success message
+    alert(`Child added: ${newChildName}\nPhoto URL: ${photoURL}`);
+    
+    // Reset form
+    setNewChildName('');
+    setSelectedPhoto(null);
+    setPhotoPreview(null);
+    setShowAddChildModal(false);
+  };
+
+  const AddChildModal = () => (
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+      <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden">
+        <div className="bg-gradient-to-r from-yellow-400 via-orange-500 to-pink-500 text-white p-6">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-2">
+              <Plus className="w-6 h-6" />
+              <h2 className="text-xl font-bold">Add Child</h2>
+            </div>
+            <button 
+              onClick={() => {
+                setShowAddChildModal(false);
+                setNewChildName('');
+                setSelectedPhoto(null);
+                setPhotoPreview(null);
+              }}
+              className="p-1 hover:bg-white/20 rounded-lg transition-all"
+            >
+              <X className="w-6 h-6" />
+            </button>
+          </div>
+          <p className="text-sm opacity-90 mt-2">
+            Add a child to your family schedule
+          </p>
+        </div>
+
+        <div className="p-6 space-y-4">
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">
+              Child's Name
+            </label>
+            <input
+              type="text"
+              value={newChildName}
+              onChange={(e) => setNewChildName(e.target.value)}
+              placeholder="Enter child's name"
+              className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-blue-500 focus:outline-none transition-all"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">
+              Profile Photo
+            </label>
+            
+            {photoPreview ? (
+              <div className="flex flex-col items-center space-y-3">
+                <img 
+                  src={photoPreview} 
+                  alt="Preview" 
+                  className="w-32 h-32 rounded-full object-cover border-4 border-blue-200"
+                />
+                <button
+                  onClick={() => {
+                    setSelectedPhoto(null);
+                    setPhotoPreview(null);
+                  }}
+                  className="text-sm text-red-600 hover:text-red-700 font-semibold"
+                >
+                  Remove Photo
+                </button>
+              </div>
+            ) : (
+              <div className="border-2 border-dashed border-gray-300 rounded-xl p-6 text-center hover:border-blue-400 transition-all">
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handlePhotoSelect}
+                  className="hidden"
+                  id="photo-upload"
+                />
+                <label 
+                  htmlFor="photo-upload"
+                  className="cursor-pointer flex flex-col items-center space-y-2"
+                >
+                  <Upload className="w-10 h-10 text-gray-400" />
+                  <span className="text-sm font-semibold text-gray-600">
+                    Click to upload photo
+                  </span>
+                  <span className="text-xs text-gray-500">
+                    JPG, PNG (Max 5MB)
+                  </span>
+                </label>
+              </div>
+            )}
+          </div>
+
+          <button 
+            onClick={handleAddChild}
+            disabled={uploadingPhoto || !newChildName.trim()}
+            className="w-full bg-gradient-to-r from-cyan-400 to-blue-500 text-white font-bold py-4 rounded-xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+          >
+            {uploadingPhoto ? 'Uploading Photo...' : 'Add Child'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
 
   const InviteModal = ({ family }) => (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
@@ -242,7 +412,10 @@ export default function FamBamsApp() {
 
         <div className="p-6 space-y-6">
           <div className="grid grid-cols-2 gap-4">
-            <button className="bg-white rounded-2xl p-4 shadow-md hover:shadow-lg transition-all flex flex-col items-center space-y-2">
+            <button 
+              onClick={() => setShowAddChildModal(true)}
+              className="bg-white rounded-2xl p-4 shadow-md hover:shadow-lg transition-all flex flex-col items-center space-y-2"
+            >
               <div className="bg-gradient-to-br from-blue-400 to-purple-400 p-3 rounded-full">
                 <Plus className="w-6 h-6 text-white" />
               </div>
@@ -315,6 +488,7 @@ export default function FamBamsApp() {
         </div>
 
         {showInviteModal && <InviteModal family={family} />}
+        {showAddChildModal && <AddChildModal />}
       </div>
     );
   };
