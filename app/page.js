@@ -3,8 +3,6 @@
 import Image from 'next/image';
 import React, { useState } from 'react';
 import { Calendar, Clock, MapPin, Upload, ChevronLeft, ChevronRight, Plus, Send, Users, Eye, X, Heart } from 'lucide-react';
-import { storage } from '../lib/firebase';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 
 export default function FamBamsApp() {
   const [currentScreen, setCurrentScreen] = useState('auth');
@@ -99,6 +97,11 @@ export default function FamBamsApp() {
     
     try {
       setUploadingPhoto(true);
+      
+      // Dynamic import of Firebase to avoid build issues
+      const { storage } = await import('../lib/firebase');
+      const { ref, uploadBytes, getDownloadURL } = await import('firebase/storage');
+      
       // Create a unique filename
       const timestamp = Date.now();
       const filename = `children/${loggedInUser.familyId}/${childName}-${timestamp}.jpg`;
