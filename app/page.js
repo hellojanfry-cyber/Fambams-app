@@ -105,7 +105,7 @@ export default function FamBamsApp() {
     setShowAddChildModal(false);
   };
 
-  const AddChildModal = () => (
+  const AddChildModal = React.memo(() => (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
       <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden">
         <div className="bg-gradient-to-r from-yellow-400 via-orange-500 to-pink-500 text-white p-6">
@@ -141,6 +141,7 @@ export default function FamBamsApp() {
               value={newChildName}
               onChange={(e) => setNewChildName(e.target.value)}
               placeholder="Enter child's name"
+              autoComplete="off"
               className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-blue-500 focus:outline-none transition-all"
             />
           </div>
@@ -202,7 +203,7 @@ export default function FamBamsApp() {
         </div>
       </div>
     </div>
-  );
+  ));
 
   const InviteModal = ({ family }) => (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
