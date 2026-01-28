@@ -105,106 +105,6 @@ export default function FamBamsApp() {
     setShowAddChildModal(false);
   };
 
-  const AddChildModal = React.memo(() => (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden">
-        <div className="bg-gradient-to-r from-yellow-400 via-orange-500 to-pink-500 text-white p-6">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-2">
-              <Plus className="w-6 h-6" />
-              <h2 className="text-xl font-bold">Add Child</h2>
-            </div>
-            <button 
-              onClick={() => {
-                setShowAddChildModal(false);
-                setNewChildName('');
-                setSelectedPhoto(null);
-                setPhotoPreview(null);
-              }}
-              className="p-1 hover:bg-white/20 rounded-lg transition-all"
-            >
-              <X className="w-6 h-6" />
-            </button>
-          </div>
-          <p className="text-sm opacity-90 mt-2">
-            Add a child to your family schedule
-          </p>
-        </div>
-
-        <div className="p-6 space-y-4">
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">
-              Child's Name
-            </label>
-            <input
-              type="text"
-              value={newChildName}
-              onChange={(e) => setNewChildName(e.target.value)}
-              placeholder="Enter child's name"
-              autoComplete="off"
-              className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-blue-500 focus:outline-none transition-all"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">
-              Profile Photo
-            </label>
-            
-            {photoPreview ? (
-              <div className="flex flex-col items-center space-y-3">
-                <img 
-                  src={photoPreview} 
-                  alt="Preview" 
-                  className="w-32 h-32 rounded-full object-cover border-4 border-blue-200"
-                />
-                <button
-                  onClick={() => {
-                    setSelectedPhoto(null);
-                    setPhotoPreview(null);
-                  }}
-                  className="text-sm text-red-600 hover:text-red-700 font-semibold"
-                >
-                  Remove Photo
-                </button>
-              </div>
-            ) : (
-              <div className="border-2 border-dashed border-gray-300 rounded-xl p-6 text-center hover:border-blue-400 transition-all">
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={handlePhotoSelect}
-                  className="hidden"
-                  id="photo-upload"
-                />
-                <label 
-                  htmlFor="photo-upload"
-                  className="cursor-pointer flex flex-col items-center space-y-2"
-                >
-                  <Upload className="w-10 h-10 text-gray-400" />
-                  <span className="text-sm font-semibold text-gray-600">
-                    Click to select photo
-                  </span>
-                  <span className="text-xs text-gray-500">
-                    (Upload feature coming soon)
-                  </span>
-                </label>
-              </div>
-            )}
-          </div>
-
-          <button 
-            onClick={handleAddChild}
-            disabled={!newChildName.trim()}
-            className="w-full bg-gradient-to-r from-cyan-400 to-blue-500 text-white font-bold py-4 rounded-xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
-          >
-            Add Child
-          </button>
-        </div>
-      </div>
-    </div>
-  ));
-
   const InviteModal = ({ family }) => (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
       <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden">
@@ -449,7 +349,105 @@ export default function FamBamsApp() {
         </div>
 
         {showInviteModal && <InviteModal family={family} />}
-        {showAddChildModal && <AddChildModal />}
+        {showAddChildModal && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+            <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden">
+              <div className="bg-gradient-to-r from-yellow-400 via-orange-500 to-pink-500 text-white p-6">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-2">
+                    <Plus className="w-6 h-6" />
+                    <h2 className="text-xl font-bold">Add Child</h2>
+                  </div>
+                  <button 
+                    onClick={() => {
+                      setShowAddChildModal(false);
+                      setNewChildName('');
+                      setSelectedPhoto(null);
+                      setPhotoPreview(null);
+                    }}
+                    className="p-1 hover:bg-white/20 rounded-lg transition-all"
+                  >
+                    <X className="w-6 h-6" />
+                  </button>
+                </div>
+                <p className="text-sm opacity-90 mt-2">
+                  Add a child to your family schedule
+                </p>
+              </div>
+
+              <div className="p-6 space-y-4">
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Child's Name
+                  </label>
+                  <input
+                    type="text"
+                    value={newChildName}
+                    onChange={(e) => setNewChildName(e.target.value)}
+                    placeholder="Enter child's name"
+                    autoComplete="off"
+                    className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-blue-500 focus:outline-none transition-all"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Profile Photo
+                  </label>
+                  
+                  {photoPreview ? (
+                    <div className="flex flex-col items-center space-y-3">
+                      <img 
+                        src={photoPreview} 
+                        alt="Preview" 
+                        className="w-32 h-32 rounded-full object-cover border-4 border-blue-200"
+                      />
+                      <button
+                        onClick={() => {
+                          setSelectedPhoto(null);
+                          setPhotoPreview(null);
+                        }}
+                        className="text-sm text-red-600 hover:text-red-700 font-semibold"
+                      >
+                        Remove Photo
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="border-2 border-dashed border-gray-300 rounded-xl p-6 text-center hover:border-blue-400 transition-all">
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handlePhotoSelect}
+                        className="hidden"
+                        id="photo-upload"
+                      />
+                      <label 
+                        htmlFor="photo-upload"
+                        className="cursor-pointer flex flex-col items-center space-y-2"
+                      >
+                        <Upload className="w-10 h-10 text-gray-400" />
+                        <span className="text-sm font-semibold text-gray-600">
+                          Click to select photo
+                        </span>
+                        <span className="text-xs text-gray-500">
+                          (Upload feature coming soon)
+                        </span>
+                      </label>
+                    </div>
+                  )}
+                </div>
+
+                <button 
+                  onClick={handleAddChild}
+                  disabled={!newChildName.trim()}
+                  className="w-full bg-gradient-to-r from-cyan-400 to-blue-500 text-white font-bold py-4 rounded-xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+                >
+                  Add Child
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     );
   };
