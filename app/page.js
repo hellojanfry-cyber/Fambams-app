@@ -1,7 +1,7 @@
 'use client';
 
 import Image from 'next/image';
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { Calendar, Clock, MapPin, Upload, ChevronLeft, ChevronRight, Plus, Send, Users, Eye, X, Heart } from 'lucide-react';
 
 export default function FamBamsApp() {
@@ -105,6 +105,105 @@ export default function FamBamsApp() {
     setShowAddChildModal(false);
   };
 
+  // Modal component moved outside to prevent re-creation
+  const AddChildModal = useCallback(({ family }) => (
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+      <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden">
+        <div className="bg-gradient-to-r from-yellow-400 via-orange-500 to-pink-500 text-white p-6">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-2">
+              <Plus className="w-6 h-6" />
+              <h2 className="text-xl font-bold">Add a Child</h2>
+            </div>
+            <button 
+              onClick={() => {
+                setShowAddChildModal(false);
+                setNewChildName('');
+                setSelectedPhoto(null);
+                setPhotoPreview(null);
+              }}
+              className="p-1 hover:bg-white/20 rounded-lg transition-all"
+            >
+              <X className="w-6 h-6" />
+            </button>
+          </div>
+          <p className="text-sm opacity-90 mt-2">
+            Add a new child to your family schedule
+          </p>
+        </div>
+
+        <div className="p-6 space-y-4">
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">
+              Child's Name
+            </label>
+            <input
+              type="text"
+              value={newChildName}
+              onChange={(e) => setNewChildName(e.target.value)}
+              placeholder="Enter child's name"
+              className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-blue-500 focus:outline-none transition-all"
+              autoFocus
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">
+              Photo (Optional)
+            </label>
+            <div className="flex items-center space-x-4">
+              {photoPreview ? (
+                <div className="relative">
+                  <img 
+                    src={photoPreview} 
+                    alt="Preview" 
+                    className="w-20 h-20 rounded-full object-cover border-4 border-cyan-400"
+                  />
+                  <button
+                    onClick={() => {
+                      setSelectedPhoto(null);
+                      setPhotoPreview(null);
+                    }}
+                    className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 transition-all"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+              ) : (
+                <label className="cursor-pointer">
+                  <div className="w-20 h-20 rounded-full border-4 border-dashed border-gray-300 flex items-center justify-center hover:border-cyan-400 transition-all bg-gray-50">
+                    <Upload className="w-8 h-8 text-gray-400" />
+                  </div>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handlePhotoSelect}
+                    className="hidden"
+                  />
+                </label>
+              )}
+              <div className="flex-1">
+                <p className="text-sm text-gray-600">
+                  Upload a photo of your child
+                </p>
+                <p className="text-xs text-gray-400 mt-1">
+                  (Feature coming soon)
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <button 
+            onClick={handleAddChild}
+            className="w-full bg-gradient-to-r from-cyan-400 to-blue-500 text-white font-bold py-4 rounded-xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all"
+          >
+            Add Child
+          </button>
+        </div>
+      </div>
+    </div>
+  ), [newChildName, photoPreview, selectedPhoto]);
+
   const InviteModal = ({ family }) => (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
       <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden">
@@ -188,362 +287,143 @@ export default function FamBamsApp() {
                           </div>
           </div>
           <h2 className="text-white text-xl font-bold mt-4">Family Schedule</h2>
-          <p className="text-white text-sm opacity-90 mt-2">Keep everyone connected</p>
+          <p className="text-white/90 text-sm mt-2">Keep everyone in sync</p>
         </div>
 
-        <div className="flex border-b border-gray-200">
-          <button
-            onClick={() => setUserType('parent')}
-            className={`flex-1 py-4 text-center font-semibold transition-all ${
-              userType === 'parent'
-                ? 'text-blue-600 border-b-3 border-blue-600 bg-blue-50'
-                : 'text-gray-500'
-            }`}
-          >
-            Parent
-          </button>
-          <button
-            onClick={() => setUserType('viewer')}
-            className={`flex-1 py-4 text-center font-semibold transition-all ${
-              userType === 'viewer'
-                ? 'text-blue-600 border-b-3 border-blue-600 bg-blue-50'
-                : 'text-gray-500'
-            }`}
-          >
-            Family Viewer
-          </button>
-        </div>
-
-        <div className="p-6 space-y-4">
+        <div className="p-8 space-y-6">
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">Email</label>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">
+              I am a...
+            </label>
+            <div className="grid grid-cols-2 gap-4">
+              <button
+                onClick={() => setUserType('parent')}
+                className={`p-4 rounded-xl border-2 transition-all ${
+                  userType === 'parent'
+                    ? 'border-cyan-500 bg-cyan-50'
+                    : 'border-gray-200 hover:border-gray-300'
+                }`}
+              >
+                <Users className="w-8 h-8 mx-auto mb-2 text-cyan-600" />
+                <span className="block text-sm font-semibold">Parent</span>
+              </button>
+              <button
+                onClick={() => setUserType('viewer')}
+                className={`p-4 rounded-xl border-2 transition-all ${
+                  userType === 'viewer'
+                    ? 'border-cyan-500 bg-cyan-50'
+                    : 'border-gray-200 hover:border-gray-300'
+                }`}
+              >
+                <Eye className="w-8 h-8 mx-auto mb-2 text-cyan-600" />
+                <span className="block text-sm font-semibold">Family Member</span>
+              </button>
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">
+              Email
+            </label>
             <input
               type="email"
-              id="email-input"
-              placeholder={userType === 'parent' ? 'parent@example.com' : 'viewer@example.com'}
-              className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-blue-500 focus:outline-none transition-all"
+              placeholder={userType === 'parent' ? 'parent@example.com' : 'grandma@example.com'}
+              className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-cyan-500 focus:outline-none transition-all"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">Password</label>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">
+              Password
+            </label>
             <input
               type="password"
               placeholder="••••••••"
-              className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-blue-500 focus:outline-none transition-all"
+              className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-cyan-500 focus:outline-none transition-all"
             />
           </div>
 
           <button
             onClick={() => {
-              const email = document.getElementById('email-input').value || 'grandma@example.com';
-              const user = users[email];
-              if (user) {
-                setLoggedInUser({ email, ...user });
-                setCurrentScreen(user.type === 'parent' ? 'parent-dashboard' : 'viewer-schedule');
-              }
+              const screen = userType === 'parent' ? 'parent-dashboard' : 'viewer-schedule';
+              setCurrentScreen(screen);
+              setLoggedInUser(userType === 'parent' ? 'sarah@example.com' : 'grandma@example.com');
             }}
-            className="w-full bg-gradient-to-r from-yellow-400 via-orange-500 to-pink-500 text-white font-bold py-4 rounded-xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all"
+            className="w-full bg-gradient-to-r from-cyan-400 to-blue-500 text-white font-bold py-4 rounded-xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all"
           >
-            {userType === 'parent' ? 'Manage My Family' : 'View Schedules'}
+            Sign In
           </button>
 
-          {userType === 'viewer' && (
-            <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 mt-4">
-              <p className="text-sm text-blue-800 font-semibold mb-2">Demo Accounts:</p>
-              <p className="text-xs text-blue-700">• grandma@example.com (Sarahs kids Grandmother)</p>
-              <p className="text-xs text-blue-700">• mike-mil@example.com (Mikes kids Grandmother)</p>
-            </div>
-          )}
+          <div className="text-center">
+            <a href="#" className="text-sm text-cyan-600 hover:text-cyan-700 font-medium">
+              Forgot password?
+            </a>
+          </div>
         </div>
       </div>
     </div>
   );
 
   const ParentDashboard = () => {
-    if (!loggedInUser) return null;
-    const family = families[loggedInUser.familyId];
+    const family = families[users[loggedInUser]?.familyId];
+    if (!family) return null;
 
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 pb-6">
-        <div className="bg-gradient-to-r from-yellow-400 via-orange-500 to-pink-500 text-white p-6 rounded-b-3xl shadow-lg">
-          <h1 className="text-2xl font-bold mb-2">{family.name}</h1>
-          <p className="text-sm opacity-90">Manage your family schedule</p>
-        </div>
-
-        <div className="p-6 space-y-6">
-          <div className="grid grid-cols-2 gap-4">
-            <button 
-              onClick={() => setShowAddChildModal(true)}
-              className="bg-white rounded-2xl p-4 shadow-md hover:shadow-lg transition-all flex flex-col items-center space-y-2"
-            >
-              <div className="bg-gradient-to-br from-blue-400 to-purple-400 p-3 rounded-full">
-                <Plus className="w-6 h-6 text-white" />
-              </div>
-              <span className="font-semibold text-gray-700 text-sm">Add Child</span>
-            </button>
-            
-            <button className="bg-white rounded-2xl p-4 shadow-md hover:shadow-lg transition-all flex flex-col items-center space-y-2">
-              <div className="bg-gradient-to-br from-green-400 to-teal-400 p-3 rounded-full">
-                <Plus className="w-6 h-6 text-white" />
-              </div>
-              <span className="font-semibold text-gray-700 text-sm">Add Event</span>
-            </button>
-          </div>
-
-          <div className="bg-white rounded-2xl p-6 shadow-md">
-            <h2 className="text-lg font-bold text-gray-800 mb-2 flex items-center">
-              <Heart className="w-5 h-5 mr-2 text-orange-500" />
-              Invite Family Members
-            </h2>
-            <p className="text-sm text-gray-600 mb-4">
-              Invite grandparents, aunts, uncles, or cousins to view your kids schedules
-            </p>
-            
-            <button 
-              onClick={() => setShowInviteModal(true)}
-              className="w-full bg-gradient-to-r from-cyan-400 to-blue-500 text-white font-semibold py-3 rounded-xl shadow hover:shadow-lg transition-all flex items-center justify-center space-x-2"
-            >
-              <Send className="w-5 h-5" />
-              <span>Send New Invitation</span>
-            </button>
-            
-            <div className="mt-4 pt-4 border-t border-gray-200">
-              <p className="text-xs font-semibold text-gray-700 mb-3 flex items-center">
-                <Eye className="w-4 h-4 mr-1" />
-                Family Members With Access:
-              </p>
-              <div className="space-y-2">
-                {family.viewers.map((viewer, idx) => (
-                  <div key={idx} className="flex items-center justify-between bg-gradient-to-r from-orange-50 to-pink-50 p-3 rounded-lg border border-orange-100">
-                    <div>
-                      <p className="text-sm font-semibold text-gray-800">{viewer.name || viewer.email}</p>
-                      <p className="text-xs text-gray-600 capitalize">{viewer.relationship.replace('-', ' ')}</p>
-                    </div>
-                    <span className="bg-green-100 text-green-700 px-2 py-1 rounded-full text-xs font-semibold">
-                      Active
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-2xl p-6 shadow-md">
-            <h2 className="text-lg font-bold text-gray-800 mb-4">Your Children</h2>
-            <div className="space-y-3">
-              {family.kids.map((kid, idx) => (
-                <div key={idx} className="flex items-center space-x-3 p-3 bg-gray-50 rounded-xl">
-                  <img src={kid.photo} alt={kid.name} className="w-12 h-12 rounded-full" />
-                  <div className="flex-1">
-                    <p className="font-semibold text-gray-800">{kid.name}</p>
-                    <p className="text-xs text-gray-500">
-                      {family.events.filter(e => e.kidId === kid.id).length} upcoming events
-                    </p>
-                  </div>
-                  <button className="text-blue-600 text-sm font-semibold">Edit</button>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        {showInviteModal && <InviteModal family={family} />}
-        {showAddChildModal && (
-          <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-            <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden">
-              <div className="bg-gradient-to-r from-yellow-400 via-orange-500 to-pink-500 text-white p-6">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-2">
-                    <Plus className="w-6 h-6" />
-                    <h2 className="text-xl font-bold">Add Child</h2>
-                  </div>
-                  <button 
-                    onClick={() => {
-                      setShowAddChildModal(false);
-                      setNewChildName('');
-                      setSelectedPhoto(null);
-                      setPhotoPreview(null);
-                    }}
-                    className="p-1 hover:bg-white/20 rounded-lg transition-all"
-                  >
-                    <X className="w-6 h-6" />
-                  </button>
-                </div>
-                <p className="text-sm opacity-90 mt-2">
-                  Add a child to your family schedule
-                </p>
-              </div>
-
-              <div className="p-6 space-y-4">
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    Child's Name
-                  </label>
-                  <input
-                    type="text"
-                    value={newChildName}
-                    onChange={(e) => setNewChildName(e.target.value)}
-                    placeholder="Enter child's name"
-                    autoComplete="off"
-                    className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-blue-500 focus:outline-none transition-all"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    Profile Photo
-                  </label>
-                  
-                  {photoPreview ? (
-                    <div className="flex flex-col items-center space-y-3">
-                      <img 
-                        src={photoPreview} 
-                        alt="Preview" 
-                        className="w-32 h-32 rounded-full object-cover border-4 border-blue-200"
-                      />
-                      <button
-                        onClick={() => {
-                          setSelectedPhoto(null);
-                          setPhotoPreview(null);
-                        }}
-                        className="text-sm text-red-600 hover:text-red-700 font-semibold"
-                      >
-                        Remove Photo
-                      </button>
-                    </div>
-                  ) : (
-                    <div className="border-2 border-dashed border-gray-300 rounded-xl p-6 text-center hover:border-blue-400 transition-all">
-                      <input
-                        type="file"
-                        accept="image/*"
-                        onChange={handlePhotoSelect}
-                        className="hidden"
-                        id="photo-upload"
-                      />
-                      <label 
-                        htmlFor="photo-upload"
-                        className="cursor-pointer flex flex-col items-center space-y-2"
-                      >
-                        <Upload className="w-10 h-10 text-gray-400" />
-                        <span className="text-sm font-semibold text-gray-600">
-                          Click to select photo
-                        </span>
-                        <span className="text-xs text-gray-500">
-                          (Upload feature coming soon)
-                        </span>
-                      </label>
-                    </div>
-                  )}
-                </div>
-
-                <button 
-                  onClick={handleAddChild}
-                  disabled={!newChildName.trim()}
-                  className="w-full bg-gradient-to-r from-cyan-400 to-blue-500 text-white font-bold py-4 rounded-xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
-                >
-                  Add Child
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-      </div>
-    );
-  };
-
-  const ViewerSchedule = () => {
-    if (!loggedInUser) return null;
-
-    const today = new Date(2026, 0, 19);
+    const today = new Date();
     const displayMonth = new Date(today.getFullYear(), today.getMonth() + currentMonth, 1);
-    const monthName = displayMonth.toLocaleString('default', { month: 'long', year: 'numeric' });
-
-    const allowedFamilies = loggedInUser.allowedFamilies.map(id => families[id]);
-    
-    const viewableKids = allowedFamilies.flatMap(family => 
-      family.kids.map(kid => ({ ...kid, familyName: family.name, familyId: family.id }))
-    );
-    
-    const viewableEvents = allowedFamilies.flatMap(family => 
-      family.events.map(event => ({ ...event, familyName: family.name, familyId: family.id }))
-    );
 
     const filteredEvents = selectedKid === 'all' 
-      ? viewableEvents 
-      : viewableEvents.filter(e => e.kidId === selectedKid);
+      ? family.events 
+      : family.events.filter(e => e.kidId === selectedKid);
 
     const sortedEvents = [...filteredEvents].sort((a, b) => 
-      new Date(a.date).getTime() - new Date(b.date).getTime()
+      new Date(a.date) - new Date(b.date)
     );
 
-    const viewerRelationship = loggedInUser.relationship 
-      ? loggedInUser.relationship.charAt(0).toUpperCase() + loggedInUser.relationship.slice(1).replace('-', '-')
-      : 'Family Member';
-
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 pb-6">
-        <div className="bg-gradient-to-r from-yellow-400 via-orange-500 to-pink-500 text-white p-6 rounded-b-3xl shadow-lg">
-          <div className="flex items-center space-x-2 mb-2">
-            <Heart className="w-6 h-6 text-pink-600" />
-            <h1 className="text-2xl font-bold">Welcome, {viewerRelationship}!</h1>
-          </div>
-          <p className="text-sm opacity-90 mb-3 text-red-700">View your grandkids activities</p>
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 pb-8">
+        {showInviteModal && <InviteModal family={family} />}
+        {showAddChildModal && <AddChildModal family={family} />}
 
-          <div className="bg-orange-600/90 backdrop-blur rounded-xl p-3">
-            <p className="text-xs font-semibold mb-2 opacity-90 text-gray-900">Youre viewing schedules for:</p>
-            {allowedFamilies.map((family, idx) => (
-              <div key={idx} className="flex items-center space-x-2 mb-1">
-                <Users className="w-4 h-4" />
-                <span className="text-sm font-semibold">{family.name}</span>
-                <span className="text-xs opacity-75">({family.kids.map(k => k.name).join(', ')})</span>
-              </div>
-            ))}
+        <div className="bg-gradient-to-r from-yellow-400 via-orange-500 to-pink-500 text-white px-6 pt-8 pb-6">
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <h1 className="text-2xl font-bold">{family.name}</h1>
+              <p className="text-sm opacity-90">Parent Dashboard</p>
+            </div>
+            <div className="bg-white p-2 rounded-xl shadow-lg">
+              <img src="https://i.postimg.cc/L5Ggh0Tt/Logo.png" alt="Logo" className="w-20" />
+            </div>
           </div>
-        </div>
 
-        <div className="px-6 py-4">
-          <div className="flex space-x-4 overflow-x-auto pb-2">
+          <div className="flex space-x-3 overflow-x-auto pb-2">
             <button
               onClick={() => setSelectedKid('all')}
-              className={`flex flex-col items-center space-y-2 transition-all ${
-                selectedKid === 'all' ? 'opacity-100' : 'opacity-60 hover:opacity-80'
+              className={`px-6 py-3 rounded-xl font-semibold whitespace-nowrap transition-all ${
+                selectedKid === 'all'
+                  ? 'bg-white text-orange-600 shadow-lg'
+                  : 'bg-white/20 text-white hover:bg-white/30'
               }`}
             >
-              <div className={`w-20 h-20 rounded-full border-4 ${
-                selectedKid === 'all' ? 'border-orange-400' : 'border-gray-300'
-              } overflow-hidden bg-white flex items-center justify-center`}>
-                <span className="text-2xl font-bold text-gray-400">All</span>
-              </div>
-              <span className="font-semibold text-sm text-gray-700">Everyone</span>
+              All Kids
             </button>
-            
-            {viewableKids.map((kid) => (
+            {family.kids.map((kid) => (
               <button
                 key={kid.id}
                 onClick={() => setSelectedKid(kid.id)}
-                className={`flex flex-col items-center space-y-2 transition-all ${
-                  selectedKid === kid.id ? 'opacity-100' : 'opacity-60 hover:opacity-80'
+                className={`px-6 py-3 rounded-xl font-semibold whitespace-nowrap transition-all ${
+                  selectedKid === kid.id
+                    ? 'bg-white text-orange-600 shadow-lg'
+                    : 'bg-white/20 text-white hover:bg-white/30'
                 }`}
               >
-                <div className={`w-20 h-20 rounded-full border-4 ${
-                  selectedKid === kid.id ? 'border-orange-400' : 'border-gray-300'
-                } overflow-hidden bg-white`}>
-                  <img src={kid.photo} alt={kid.name} className="w-full h-full object-cover" />
-                </div>
-                <div className="text-center">
-                  <span className="font-semibold text-sm text-gray-700 block">{kid.name}</span>
-                  {allowedFamilies.length > 1 && (
-                    <span className="text-xs text-gray-500">{kid.familyName}</span>
-                  )}
-                </div>
+                {kid.name}
               </button>
             ))}
           </div>
         </div>
 
-        <div className="px-6 py-4">
-          <div className="bg-white rounded-2xl shadow-lg p-6">
+        <div className="px-6 -mt-4">
+          <div className="bg-white rounded-3xl shadow-xl p-6 mb-6">
             <div className="flex items-center justify-between mb-6">
               <button
                 onClick={() => setCurrentMonth(currentMonth - 1)}
@@ -551,7 +431,9 @@ export default function FamBamsApp() {
               >
                 <ChevronLeft className="w-6 h-6 text-gray-600" />
               </button>
-              <h2 className="text-xl font-bold text-gray-800">{monthName}</h2>
+              <h2 className="text-xl font-bold text-gray-800">
+                {displayMonth.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+              </h2>
               <button
                 onClick={() => setCurrentMonth(currentMonth + 1)}
                 className="p-2 hover:bg-gray-100 rounded-lg transition-all"
@@ -561,7 +443,151 @@ export default function FamBamsApp() {
             </div>
 
             <CalendarGrid 
-              displayMonth={displayMonth} 
+              displayMonth={displayMonth}
+              events={filteredEvents}
+              today={today}
+              hoveredDay={hoveredDay}
+              setHoveredDay={setHoveredDay}
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-4 mb-6">
+            <button
+              onClick={() => setShowAddChildModal(true)}
+              className="bg-gradient-to-r from-cyan-400 to-blue-500 text-white font-bold py-4 rounded-xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all flex items-center justify-center space-x-2"
+            >
+              <Plus className="w-5 h-5" />
+              <span>Add Child</span>
+            </button>
+            <button
+              onClick={() => setShowInviteModal(true)}
+              className="bg-gradient-to-r from-pink-400 to-purple-500 text-white font-bold py-4 rounded-xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all flex items-center justify-center space-x-2"
+            >
+              <Send className="w-5 h-5" />
+              <span>Invite Family</span>
+            </button>
+          </div>
+        </div>
+
+        <div className="px-6">
+          <h2 className="text-xl font-bold text-gray-800 mb-4">
+            {selectedKid === 'all' 
+              ? 'All Events'
+              : `${family.kids.find(k => k.id === selectedKid)?.name}s Events`
+            }
+          </h2>
+          <div className="space-y-3">
+            {sortedEvents.length === 0 ? (
+              <div className="bg-white rounded-2xl p-6 shadow text-center text-gray-500">
+                No events scheduled
+              </div>
+            ) : (
+              sortedEvents.map((event) => (
+                <EventCard key={event.id} event={event} showFamily={false} />
+              ))
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  const ViewerSchedule = () => {
+    const userInfo = users[loggedInUser];
+    if (!userInfo) return null;
+
+    const allowedFamilies = userInfo.allowedFamilies;
+    
+    const allKids = [];
+    const allEvents = [];
+    
+    allowedFamilies.forEach(familyId => {
+      const family = families[familyId];
+      family.kids.forEach(kid => {
+        allKids.push({ ...kid, familyId, familyName: family.name });
+      });
+      family.events.forEach(event => {
+        allEvents.push({ ...event, familyId, familyName: family.name });
+      });
+    });
+
+    const today = new Date();
+    const displayMonth = new Date(today.getFullYear(), today.getMonth() + currentMonth, 1);
+
+    const filteredEvents = selectedKid === 'all' 
+      ? allEvents 
+      : allEvents.filter(e => e.kidId === selectedKid);
+
+    const sortedEvents = [...filteredEvents].sort((a, b) => 
+      new Date(a.date) - new Date(b.date)
+    );
+
+    const viewableKids = selectedKid === 'all' ? allKids : allKids.filter(k => k.id === selectedKid);
+
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 pb-8">
+        <div className="bg-gradient-to-r from-yellow-400 via-orange-500 to-pink-500 text-white px-6 pt-8 pb-6">
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <h1 className="text-2xl font-bold">Family Schedule</h1>
+              <p className="text-sm opacity-90">
+                Viewing as {userInfo.relationship}
+              </p>
+            </div>
+            <div className="bg-white p-2 rounded-xl shadow-lg">
+              <img src="https://i.postimg.cc/L5Ggh0Tt/Logo.png" alt="Logo" className="w-20" />
+            </div>
+          </div>
+
+          <div className="flex space-x-3 overflow-x-auto pb-2">
+            <button
+              onClick={() => setSelectedKid('all')}
+              className={`px-6 py-3 rounded-xl font-semibold whitespace-nowrap transition-all ${
+                selectedKid === 'all'
+                  ? 'bg-white text-orange-600 shadow-lg'
+                  : 'bg-white/20 text-white hover:bg-white/30'
+              }`}
+            >
+              All Kids
+            </button>
+            {allKids.map((kid) => (
+              <button
+                key={`${kid.familyId}-${kid.id}`}
+                onClick={() => setSelectedKid(kid.id)}
+                className={`px-6 py-3 rounded-xl font-semibold whitespace-nowrap transition-all ${
+                  selectedKid === kid.id
+                    ? 'bg-white text-orange-600 shadow-lg'
+                    : 'bg-white/20 text-white hover:bg-white/30'
+                }`}
+              >
+                {kid.name}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="px-6 -mt-4">
+          <div className="bg-white rounded-3xl shadow-xl p-6 mb-6">
+            <div className="flex items-center justify-between mb-6">
+              <button
+                onClick={() => setCurrentMonth(currentMonth - 1)}
+                className="p-2 hover:bg-gray-100 rounded-lg transition-all"
+              >
+                <ChevronLeft className="w-6 h-6 text-gray-600" />
+              </button>
+              <h2 className="text-xl font-bold text-gray-800">
+                {displayMonth.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+              </h2>
+              <button
+                onClick={() => setCurrentMonth(currentMonth + 1)}
+                className="p-2 hover:bg-gray-100 rounded-lg transition-all"
+              >
+                <ChevronRight className="w-6 h-6 text-gray-600" />
+              </button>
+            </div>
+
+            <CalendarGrid 
+              displayMonth={displayMonth}
               events={filteredEvents}
               today={today}
               hoveredDay={hoveredDay}
