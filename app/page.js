@@ -1,16 +1,22 @@
 'use client';
 
 import Image from 'next/image';
-import React, { useState, useCallback } from 'react';
-import { Calendar, Clock, MapPin, Upload, ChevronLeft, ChevronRight, Plus, Send, Users, Eye, X, Heart } from 'lucide-react';
+import React, { useState, useCallback, useEffect } from 'react';
+import { Calendar, Clock, MapPin, Upload, ChevronLeft, ChevronRight, Plus, Send, Users, Eye, X, Heart, LogOut } from 'lucide-react';
+import { onAuthStateChanged } from 'firebase/auth';
+import { auth } from '../lib/firebase';
+import { signUpUser, signInUser, signOutUser, resetPassword, getUserData, getFamilyData } from '../lib/auth';
 
 export default function FamBamsApp() {
-  const [currentScreen, setCurrentScreen] = useState('auth');
+  const [currentScreen, setCurrentScreen] = useState('loading');
+  const [authMode, setAuthMode] = useState('signin'); // 'signin' or 'signup'
   const [userType, setUserType] = useState('parent');
   const [currentMonth, setCurrentMonth] = useState(0);
   const [selectedKid, setSelectedKid] = useState('all');
   const [hoveredDay, setHoveredDay] = useState(null);
-  const [loggedInUser, setLoggedInUser] = useState(null);
+  const [currentUser, setCurrentUser] = useState(null);
+  const [userData, setUserData] = useState(null);
+  const [familyData, setFamilyData] = useState(null);
   const [showInviteModal, setShowInviteModal] = useState(false);
   const [showAddChildModal, setShowAddChildModal] = useState(false);
   const [inviteEmail, setInviteEmail] = useState('');
@@ -18,6 +24,16 @@ export default function FamBamsApp() {
   const [newChildName, setNewChildName] = useState('');
   const [selectedPhoto, setSelectedPhoto] = useState(null);
   const [photoPreview, setPhotoPreview] = useState(null);
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
+  
+  // Form states
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [displayName, setDisplayName] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [successMessage, setSuccessMessage] = useState('');
 
   const relationshipOptions = [
     { value: 'grandmother', label: 'Grandmother' },
@@ -29,53 +45,126 @@ export default function FamBamsApp() {
     { value: 'cousin', label: 'Cousin' },
   ];
 
-  const families = {
-    'sarah-family': {
-      id: 'sarah-family',
-      name: 'Sarah Johnson Family',
-      parentName: 'Sarah Johnson',
-      kids: [
-        { id: 'emma', name: 'Emma', photo: 'https://via.placeholder.com/80' },
-        { id: 'jake', name: 'Jake', photo: 'https://via.placeholder.com/80' },
-        { id: 'lily', name: 'Lily', photo: 'https://via.placeholder.com/80' }
-      ],
-      events: [
-        { id: 1, kidId: 'emma', kidName: 'Emma', date: '2026-01-20', activity: 'Soccer Practice', time: '4:00 PM', location: 'Park Field #3' },
-        { id: 2, kidId: 'jake', kidName: 'Jake', date: '2026-01-20', activity: 'Piano Lesson', time: '5:00 PM', location: 'Music Academy' },
-        { id: 3, kidId: 'lily', kidName: 'Lily', date: '2026-01-21', activity: 'Dance Class', time: '3:30 PM', location: 'Studio Dance Co.' },
-        { id: 4, kidId: 'emma', kidName: 'Emma', date: '2026-01-22', activity: 'Soccer Game', time: '6:30 PM', location: 'Central Park' },
-        { id: 5, kidId: 'jake', kidName: 'Jake', date: '2026-01-24', activity: 'Piano Recital', time: '7:00 PM', location: 'Concert Hall' },
-      ],
-      viewers: [
-        { email: 'grandma@example.com', relationship: 'grandmother', name: 'Grandma Mary' },
-        { email: 'grandpa@example.com', relationship: 'grandfather', name: 'Grandpa John' }
-      ]
-    },
-    'mike-family': {
-      id: 'mike-family',
-      name: 'Mike Johnson Family',
-      parentName: 'Mike Johnson',
-      kids: [
-        { id: 'alex', name: 'Alex', photo: 'https://via.placeholder.com/80' },
-        { id: 'sophie', name: 'Sophie', photo: 'https://via.placeholder.com/80' }
-      ],
-      events: [
-        { id: 6, kidId: 'alex', kidName: 'Alex', date: '2026-01-20', activity: 'Baseball Practice', time: '5:30 PM', location: 'Sports Complex' },
-        { id: 7, kidId: 'sophie', kidName: 'Sophie', date: '2026-01-21', activity: 'Art Class', time: '4:00 PM', location: 'Community Center' },
-        { id: 8, kidId: 'alex', kidName: 'Alex', date: '2026-01-23', activity: 'Baseball Game', time: '6:00 PM', location: 'Stadium Field 1' },
-        { id: 9, kidId: 'sophie', kidName: 'Sophie', date: '2026-01-24', activity: 'Gymnastics', time: '3:00 PM', location: 'Elite Gym' },
-      ],
-      viewers: [
-        { email: 'mike-mil@example.com', relationship: 'grandmother', name: 'Grandma Linda' }
-      ]
+  // Listen for auth state changes
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      if (user) {
+        setCurrentUser(user);
+        // Load user data
+        const userDataResult = await getUserData(user.uid);
+        if (userDataResult.success) {
+          setUserData(userDataResult.data);
+          
+          // Load family data if user is parent
+          if (userDataResult.data.userType === 'parent') {
+            const familyDataResult = await getFamilyData(userDataResult.data.familyId);
+            if (familyDataResult.success) {
+              setFamilyData(familyDataResult.data);
+              setCurrentScreen('parent-dashboard');
+            }
+          } else {
+            // Viewer - will load multiple families later
+            setCurrentScreen('viewer-schedule');
+          }
+        }
+      } else {
+        setCurrentUser(null);
+        setUserData(null);
+        setFamilyData(null);
+        setCurrentScreen('auth');
+      }
+    });
+
+    return () => unsubscribe();
+  }, []);
+
+  const handleSignUp = async (e) => {
+    e.preventDefault();
+    setError('');
+    setLoading(true);
+
+    // Validation
+    if (!email || !password || !displayName) {
+      setError('Please fill in all fields');
+      setLoading(false);
+      return;
     }
+
+    if (password.length < 6) {
+      setError('Password must be at least 6 characters');
+      setLoading(false);
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      setError('Passwords do not match');
+      setLoading(false);
+      return;
+    }
+
+    const result = await signUpUser(email, password, userType, displayName);
+    
+    if (result.success) {
+      // User will be automatically logged in via onAuthStateChanged
+      setSuccessMessage('Account created successfully!');
+    } else {
+      setError(result.error);
+    }
+    
+    setLoading(false);
   };
 
-  const users = {
-    'sarah@example.com': { type: 'parent', familyId: 'sarah-family' },
-    'mike@example.com': { type: 'parent', familyId: 'mike-family' },
-    'grandma@example.com': { type: 'viewer', allowedFamilies: ['sarah-family', 'mike-family'], relationship: 'grandmother' },
-    'mike-mil@example.com': { type: 'viewer', allowedFamilies: ['mike-family'], relationship: 'grandmother' },
+  const handleSignIn = async (e) => {
+    e.preventDefault();
+    setError('');
+    setLoading(true);
+
+    if (!email || !password) {
+      setError('Please fill in all fields');
+      setLoading(false);
+      return;
+    }
+
+    const result = await signInUser(email, password);
+    
+    if (result.success) {
+      // User will be automatically logged in via onAuthStateChanged
+    } else {
+      setError(result.error);
+    }
+    
+    setLoading(false);
+  };
+
+  const handleSignOut = async () => {
+    await signOutUser();
+    setCurrentScreen('auth');
+  };
+
+  const handlePasswordReset = async (e) => {
+    e.preventDefault();
+    setError('');
+    setLoading(true);
+
+    if (!email) {
+      setError('Please enter your email address');
+      setLoading(false);
+      return;
+    }
+
+    const result = await resetPassword(email);
+    
+    if (result.success) {
+      setSuccessMessage('Password reset email sent! Check your inbox.');
+      setTimeout(() => {
+        setShowForgotPassword(false);
+        setSuccessMessage('');
+      }, 3000);
+    } else {
+      setError(result.error);
+    }
+    
+    setLoading(false);
   };
 
   const handlePhotoSelect = (e) => {
@@ -97,7 +186,7 @@ export default function FamBamsApp() {
     }
 
     // For now, just show a message that the feature is coming soon
-    alert(`Child "${newChildName}" will be added!\n\nNote: Photo upload feature will be enabled in the next update.`);
+    alert(`Child "${newChildName}" will be added!\n\nNote: This feature will be fully implemented in Phase 2.`);
     
     setNewChildName('');
     setSelectedPhoto(null);
@@ -106,7 +195,7 @@ export default function FamBamsApp() {
   };
 
   // Modal component moved outside to prevent re-creation
-  const AddChildModal = useCallback(({ family }) => (
+  const AddChildModal = useCallback(() => (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
       <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden">
         <div className="bg-gradient-to-r from-yellow-400 via-orange-500 to-pink-500 text-white p-6">
@@ -187,7 +276,7 @@ export default function FamBamsApp() {
                   Upload a photo of your child
                 </p>
                 <p className="text-xs text-gray-400 mt-1">
-                  (Feature coming soon)
+                  (Coming in Phase 3)
                 </p>
               </div>
             </div>
@@ -202,9 +291,9 @@ export default function FamBamsApp() {
         </div>
       </div>
     </div>
-  ), [newChildName, photoPreview, selectedPhoto]);
+  ), [newChildName, photoPreview]);
 
-  const InviteModal = ({ family }) => (
+  const InviteModal = () => (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
       <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden">
         <div className="bg-gradient-to-r from-yellow-400 via-orange-500 to-pink-500 text-white p-6">
@@ -258,13 +347,13 @@ export default function FamBamsApp() {
 
           <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
             <p className="text-sm text-blue-800">
-              <strong>They will receive:</strong> {family.parentName} has invited you to view {family.kids.map(k => k.name).join(', ')} activities as their <strong>{relationshipOptions.find(r => r.value === inviteRelationship)?.label}</strong>
+              <strong>They will receive:</strong> An invitation to view your family activities as their <strong>{relationshipOptions.find(r => r.value === inviteRelationship)?.label}</strong>
             </p>
           </div>
 
           <button 
             onClick={() => {
-              alert(`Invitation sent to ${inviteEmail} as ${relationshipOptions.find(r => r.value === inviteRelationship)?.label}!`);
+              alert(`Invitation feature coming in Phase 2! Will send to ${inviteEmail} as ${relationshipOptions.find(r => r.value === inviteRelationship)?.label}`);
               setShowInviteModal(false);
               setInviteEmail('');
               setInviteRelationship('grandmother');
@@ -283,97 +372,240 @@ export default function FamBamsApp() {
       <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden">
         <div className="bg-gradient-to-r from-yellow-400 via-orange-500 to-pink-500 p-8 text-center">
           <div className="flex justify-center mb-4">
-            <div className="bg-white p-4 rounded-2xl shadow-lg"> <img src="https://i.postimg.cc/L5Ggh0Tt/Logo.png" alt="FamBams Logo" style={{width: '176px', height: 'auto'}} />
-                          </div>
+            <div className="bg-white p-4 rounded-2xl shadow-lg">
+              <img src="https://i.postimg.cc/L5Ggh0Tt/Logo.png" alt="FamBams Logo" style={{width: '176px', height: 'auto'}} />
+            </div>
           </div>
           <h2 className="text-white text-xl font-bold mt-4">Family Schedule</h2>
           <p className="text-white/90 text-sm mt-2">Keep everyone in sync</p>
         </div>
 
-        <div className="p-8 space-y-6">
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">
-              I am a...
-            </label>
-            <div className="grid grid-cols-2 gap-4">
+        {showForgotPassword ? (
+          <div className="p-8">
+            <h3 className="text-2xl font-bold text-gray-800 mb-2">Reset Password</h3>
+            <p className="text-gray-600 mb-6">Enter your email to receive a password reset link</p>
+            
+            {error && (
+              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl mb-4">
+                {error}
+              </div>
+            )}
+            
+            {successMessage && (
+              <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-xl mb-4">
+                {successMessage}
+              </div>
+            )}
+
+            <form onSubmit={handlePasswordReset} className="space-y-4">
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Email
+                </label>
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="your@email.com"
+                  className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-cyan-500 focus:outline-none transition-all"
+                />
+              </div>
+
               <button
-                onClick={() => setUserType('parent')}
-                className={`p-4 rounded-xl border-2 transition-all ${
-                  userType === 'parent'
-                    ? 'border-cyan-500 bg-cyan-50'
-                    : 'border-gray-200 hover:border-gray-300'
+                type="submit"
+                disabled={loading}
+                className="w-full bg-gradient-to-r from-cyan-400 to-blue-500 text-white font-bold py-4 rounded-xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {loading ? 'Sending...' : 'Send Reset Link'}
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setShowForgotPassword(false);
+                  setError('');
+                  setSuccessMessage('');
+                }}
+                className="w-full text-cyan-600 hover:text-cyan-700 font-medium"
+              >
+                Back to Sign In
+              </button>
+            </form>
+          </div>
+        ) : (
+          <div className="p-8 space-y-6">
+            <div className="flex justify-center space-x-2 mb-4">
+              <button
+                onClick={() => {
+                  setAuthMode('signin');
+                  setError('');
+                }}
+                className={`px-6 py-2 rounded-lg font-semibold transition-all ${
+                  authMode === 'signin'
+                    ? 'bg-cyan-500 text-white'
+                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                 }`}
               >
-                <Users className="w-8 h-8 mx-auto mb-2 text-cyan-600" />
-                <span className="block text-sm font-semibold">Parent</span>
+                Sign In
               </button>
               <button
-                onClick={() => setUserType('viewer')}
-                className={`p-4 rounded-xl border-2 transition-all ${
-                  userType === 'viewer'
-                    ? 'border-cyan-500 bg-cyan-50'
-                    : 'border-gray-200 hover:border-gray-300'
+                onClick={() => {
+                  setAuthMode('signup');
+                  setError('');
+                }}
+                className={`px-6 py-2 rounded-lg font-semibold transition-all ${
+                  authMode === 'signup'
+                    ? 'bg-cyan-500 text-white'
+                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                 }`}
               >
-                <Eye className="w-8 h-8 mx-auto mb-2 text-cyan-600" />
-                <span className="block text-sm font-semibold">Family Member</span>
+                Sign Up
               </button>
             </div>
-          </div>
 
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">
-              Email
-            </label>
-            <input
-              type="email"
-              placeholder={userType === 'parent' ? 'parent@example.com' : 'grandma@example.com'}
-              className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-cyan-500 focus:outline-none transition-all"
-            />
-          </div>
+            {error && (
+              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl">
+                {error}
+              </div>
+            )}
 
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">
-              Password
-            </label>
-            <input
-              type="password"
-              placeholder="••••••••"
-              className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-cyan-500 focus:outline-none transition-all"
-            />
-          </div>
+            {authMode === 'signup' && (
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  I am a...
+                </label>
+                <div className="grid grid-cols-2 gap-4">
+                  <button
+                    type="button"
+                    onClick={() => setUserType('parent')}
+                    className={`p-4 rounded-xl border-2 transition-all ${
+                      userType === 'parent'
+                        ? 'border-cyan-500 bg-cyan-50'
+                        : 'border-gray-200 hover:border-gray-300'
+                    }`}
+                  >
+                    <Users className="w-8 h-8 mx-auto mb-2 text-cyan-600" />
+                    <span className="block text-sm font-semibold">Parent</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setUserType('viewer')}
+                    className={`p-4 rounded-xl border-2 transition-all ${
+                      userType === 'viewer'
+                        ? 'border-cyan-500 bg-cyan-50'
+                        : 'border-gray-200 hover:border-gray-300'
+                    }`}
+                  >
+                    <Eye className="w-8 h-8 mx-auto mb-2 text-cyan-600" />
+                    <span className="block text-sm font-semibold">Family Member</span>
+                  </button>
+                </div>
+              </div>
+            )}
 
-          <button
-            onClick={() => {
-              const screen = userType === 'parent' ? 'parent-dashboard' : 'viewer-schedule';
-              setCurrentScreen(screen);
-              setLoggedInUser(userType === 'parent' ? 'sarah@example.com' : 'grandma@example.com');
-            }}
-            className="w-full bg-gradient-to-r from-cyan-400 to-blue-500 text-white font-bold py-4 rounded-xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all"
-          >
-            Sign In
-          </button>
+            <form onSubmit={authMode === 'signin' ? handleSignIn : handleSignUp} className="space-y-4">
+              {authMode === 'signup' && (
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Your Name
+                  </label>
+                  <input
+                    type="text"
+                    value={displayName}
+                    onChange={(e) => setDisplayName(e.target.value)}
+                    placeholder="John Doe"
+                    className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-cyan-500 focus:outline-none transition-all"
+                  />
+                </div>
+              )}
 
-          <div className="text-center">
-            <a href="#" className="text-sm text-cyan-600 hover:text-cyan-700 font-medium">
-              Forgot password?
-            </a>
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Email
+                </label>
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="your@email.com"
+                  className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-cyan-500 focus:outline-none transition-all"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Password
+                </label>
+                <input
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="••••••••"
+                  className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-cyan-500 focus:outline-none transition-all"
+                />
+              </div>
+
+              {authMode === 'signup' && (
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Confirm Password
+                  </label>
+                  <input
+                    type="password"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    placeholder="••••••••"
+                    className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-cyan-500 focus:outline-none transition-all"
+                  />
+                </div>
+              )}
+
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full bg-gradient-to-r from-cyan-400 to-blue-500 text-white font-bold py-4 rounded-xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {loading ? 'Please wait...' : authMode === 'signin' ? 'Sign In' : 'Create Account'}
+              </button>
+            </form>
+
+            {authMode === 'signin' && (
+              <div className="text-center">
+                <button
+                  onClick={() => {
+                    setShowForgotPassword(true);
+                    setError('');
+                  }}
+                  className="text-sm text-cyan-600 hover:text-cyan-700 font-medium"
+                >
+                  Forgot password?
+                </button>
+              </div>
+            )}
           </div>
-        </div>
+        )}
       </div>
     </div>
   );
 
   const ParentDashboard = () => {
-    const family = families[users[loggedInUser]?.familyId];
-    if (!family) return null;
+    if (!familyData) {
+      return (
+        <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 flex items-center justify-center">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-cyan-500 mx-auto mb-4"></div>
+            <p className="text-gray-600">Loading your family data...</p>
+          </div>
+        </div>
+      );
+    }
 
     const today = new Date();
     const displayMonth = new Date(today.getFullYear(), today.getMonth() + currentMonth, 1);
 
     const filteredEvents = selectedKid === 'all' 
-      ? family.events 
-      : family.events.filter(e => e.kidId === selectedKid);
+      ? familyData.events 
+      : familyData.events.filter(e => e.kidId === selectedKid);
 
     const sortedEvents = [...filteredEvents].sort((a, b) => 
       new Date(a.date) - new Date(b.date)
@@ -381,17 +613,26 @@ export default function FamBamsApp() {
 
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 pb-8">
-        {showInviteModal && <InviteModal family={family} />}
-        {showAddChildModal && <AddChildModal family={family} />}
+        {showInviteModal && <InviteModal />}
+        {showAddChildModal && <AddChildModal />}
 
         <div className="bg-gradient-to-r from-yellow-400 via-orange-500 to-pink-500 text-white px-6 pt-8 pb-6">
           <div className="flex items-center justify-between mb-6">
             <div>
-              <h1 className="text-2xl font-bold">{family.name}</h1>
+              <h1 className="text-2xl font-bold">{familyData.name}</h1>
               <p className="text-sm opacity-90">Parent Dashboard</p>
             </div>
-            <div className="bg-white p-2 rounded-xl shadow-lg">
-              <img src="https://i.postimg.cc/L5Ggh0Tt/Logo.png" alt="Logo" className="w-20" />
+            <div className="flex items-center space-x-2">
+              <div className="bg-white p-2 rounded-xl shadow-lg">
+                <img src="https://i.postimg.cc/L5Ggh0Tt/Logo.png" alt="Logo" className="w-20" />
+              </div>
+              <button
+                onClick={handleSignOut}
+                className="p-2 bg-white/20 hover:bg-white/30 rounded-lg transition-all"
+                title="Sign Out"
+              >
+                <LogOut className="w-6 h-6" />
+              </button>
             </div>
           </div>
 
@@ -406,7 +647,7 @@ export default function FamBamsApp() {
             >
               All Kids
             </button>
-            {family.kids.map((kid) => (
+            {familyData.kids && familyData.kids.map((kid) => (
               <button
                 key={kid.id}
                 onClick={() => setSelectedKid(kid.id)}
@@ -473,13 +714,13 @@ export default function FamBamsApp() {
           <h2 className="text-xl font-bold text-gray-800 mb-4">
             {selectedKid === 'all' 
               ? 'All Events'
-              : `${family.kids.find(k => k.id === selectedKid)?.name}s Events`
+              : `${familyData.kids && familyData.kids.find(k => k.id === selectedKid)?.name}'s Events`
             }
           </h2>
           <div className="space-y-3">
             {sortedEvents.length === 0 ? (
               <div className="bg-white rounded-2xl p-6 shadow text-center text-gray-500">
-                No events scheduled
+                No events scheduled. Activities you add will appear here!
               </div>
             ) : (
               sortedEvents.map((event) => (
@@ -493,36 +734,16 @@ export default function FamBamsApp() {
   };
 
   const ViewerSchedule = () => {
-    const userInfo = users[loggedInUser];
-    if (!userInfo) return null;
-
-    const allowedFamilies = userInfo.allowedFamilies;
-    
-    const allKids = [];
-    const allEvents = [];
-    
-    allowedFamilies.forEach(familyId => {
-      const family = families[familyId];
-      family.kids.forEach(kid => {
-        allKids.push({ ...kid, familyId, familyName: family.name });
-      });
-      family.events.forEach(event => {
-        allEvents.push({ ...event, familyId, familyName: family.name });
-      });
-    });
-
-    const today = new Date();
-    const displayMonth = new Date(today.getFullYear(), today.getMonth() + currentMonth, 1);
-
-    const filteredEvents = selectedKid === 'all' 
-      ? allEvents 
-      : allEvents.filter(e => e.kidId === selectedKid);
-
-    const sortedEvents = [...filteredEvents].sort((a, b) => 
-      new Date(a.date) - new Date(b.date)
-    );
-
-    const viewableKids = selectedKid === 'all' ? allKids : allKids.filter(k => k.id === selectedKid);
+    if (!userData) {
+      return (
+        <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 flex items-center justify-center">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-cyan-500 mx-auto mb-4"></div>
+            <p className="text-gray-600">Loading schedules...</p>
+          </div>
+        </div>
+      );
+    }
 
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 pb-8">
@@ -531,88 +752,42 @@ export default function FamBamsApp() {
             <div>
               <h1 className="text-2xl font-bold">Family Schedule</h1>
               <p className="text-sm opacity-90">
-                Viewing as {userInfo.relationship}
+                Viewing as {userData.relationship || 'Family Member'}
               </p>
             </div>
-            <div className="bg-white p-2 rounded-xl shadow-lg">
-              <img src="https://i.postimg.cc/L5Ggh0Tt/Logo.png" alt="Logo" className="w-20" />
-            </div>
-          </div>
-
-          <div className="flex space-x-3 overflow-x-auto pb-2">
-            <button
-              onClick={() => setSelectedKid('all')}
-              className={`px-6 py-3 rounded-xl font-semibold whitespace-nowrap transition-all ${
-                selectedKid === 'all'
-                  ? 'bg-white text-orange-600 shadow-lg'
-                  : 'bg-white/20 text-white hover:bg-white/30'
-              }`}
-            >
-              All Kids
-            </button>
-            {allKids.map((kid) => (
-              <button
-                key={`${kid.familyId}-${kid.id}`}
-                onClick={() => setSelectedKid(kid.id)}
-                className={`px-6 py-3 rounded-xl font-semibold whitespace-nowrap transition-all ${
-                  selectedKid === kid.id
-                    ? 'bg-white text-orange-600 shadow-lg'
-                    : 'bg-white/20 text-white hover:bg-white/30'
-                }`}
-              >
-                {kid.name}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        <div className="px-6 -mt-4">
-          <div className="bg-white rounded-3xl shadow-xl p-6 mb-6">
-            <div className="flex items-center justify-between mb-6">
-              <button
-                onClick={() => setCurrentMonth(currentMonth - 1)}
-                className="p-2 hover:bg-gray-100 rounded-lg transition-all"
-              >
-                <ChevronLeft className="w-6 h-6 text-gray-600" />
-              </button>
-              <h2 className="text-xl font-bold text-gray-800">
-                {displayMonth.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
-              </h2>
-              <button
-                onClick={() => setCurrentMonth(currentMonth + 1)}
-                className="p-2 hover:bg-gray-100 rounded-lg transition-all"
-              >
-                <ChevronRight className="w-6 h-6 text-gray-600" />
-              </button>
-            </div>
-
-            <CalendarGrid 
-              displayMonth={displayMonth}
-              events={filteredEvents}
-              today={today}
-              hoveredDay={hoveredDay}
-              setHoveredDay={setHoveredDay}
-            />
-          </div>
-        </div>
-
-        <div className="px-6">
-          <h2 className="text-xl font-bold text-gray-800 mb-4">
-            {selectedKid === 'all' 
-              ? 'All Events'
-              : `${viewableKids.find(k => k.id === selectedKid)?.name}s Events`
-            }
-          </h2>
-          <div className="space-y-3">
-            {sortedEvents.length === 0 ? (
-              <div className="bg-white rounded-2xl p-6 shadow text-center text-gray-500">
-                No events scheduled
+            <div className="flex items-center space-x-2">
+              <div className="bg-white p-2 rounded-xl shadow-lg">
+                <img src="https://i.postimg.cc/L5Ggh0Tt/Logo.png" alt="Logo" className="w-20" />
               </div>
-            ) : (
-              sortedEvents.map((event) => (
-                <EventCard key={event.id} event={event} showFamily={allowedFamilies.length > 1} />
-              ))
-            )}
+              <button
+                onClick={handleSignOut}
+                className="p-2 bg-white/20 hover:bg-white/30 rounded-lg transition-all"
+                title="Sign Out"
+              >
+                <LogOut className="w-6 h-6" />
+              </button>
+            </div>
+          </div>
+
+          <div className="bg-white/20 backdrop-blur-sm rounded-xl p-4 text-center">
+            <p className="text-sm">
+              Waiting for family invitations...
+            </p>
+            <p className="text-xs opacity-75 mt-1">
+              Ask a parent to invite you to view their family schedule
+            </p>
+          </div>
+        </div>
+
+        <div className="px-6 mt-6">
+          <div className="bg-white rounded-3xl shadow-xl p-8 text-center">
+            <Heart className="w-16 h-16 mx-auto mb-4 text-pink-400" />
+            <h3 className="text-xl font-bold text-gray-800 mb-2">
+              No Families Yet
+            </h3>
+            <p className="text-gray-600">
+              Once a parent invites you, their family schedule will appear here.
+            </p>
           </div>
         </div>
       </div>
@@ -770,6 +945,17 @@ export default function FamBamsApp() {
       </div>
     );
   };
+
+  if (currentScreen === 'loading') {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-cyan-500 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading FamBams...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="font-sans">
