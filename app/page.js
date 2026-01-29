@@ -586,7 +586,7 @@ export default function FamBamsApp() {
         )}
       </div>
     </div>
-  ), [authMode, userType, showForgotPassword, email, password, confirmPassword, displayName, loading, error, successMessage, handleSignUp, handleSignIn, handlePasswordReset]);
+  ), [authMode, userType, showForgotPassword, loading, error, successMessage]);
 
   const ParentDashboard = () => {
     if (!familyData) {
