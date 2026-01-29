@@ -367,7 +367,7 @@ export default function FamBamsApp() {
     </div>
   );
 
-  const AuthScreen = () => (
+  const AuthScreen = React.useMemo(() => () => (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 flex items-center justify-center p-4">
       <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden">
         <div className="bg-gradient-to-r from-yellow-400 via-orange-500 to-pink-500 p-8 text-center">
@@ -586,7 +586,7 @@ export default function FamBamsApp() {
         )}
       </div>
     </div>
-  );
+  ), [authMode, userType, showForgotPassword, email, password, confirmPassword, displayName, loading, error, successMessage, handleSignUp, handleSignIn, handlePasswordReset]);
 
   const ParentDashboard = () => {
     if (!familyData) {
