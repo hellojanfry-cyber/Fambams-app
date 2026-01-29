@@ -385,17 +385,19 @@ export default function FamBamsApp() {
             <h3 className="text-2xl font-bold text-gray-800 mb-2">Reset Password</h3>
             <p className="text-gray-600 mb-6">Enter your email to receive a password reset link</p>
             
-            {error && (
-              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl mb-4">
-                {error}
-              </div>
-            )}
-            
-            {successMessage && (
-              <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-xl mb-4">
-                {successMessage}
-              </div>
-            )}
+            <div className="min-h-[60px]">
+              {error && (
+                <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl mb-4">
+                  {error}
+                </div>
+              )}
+              
+              {successMessage && (
+                <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-xl mb-4">
+                  {successMessage}
+                </div>
+              )}
+            </div>
 
             <form onSubmit={handlePasswordReset} className="space-y-4">
               <div>
@@ -463,11 +465,13 @@ export default function FamBamsApp() {
               </button>
             </div>
 
-            {error && (
-              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl">
-                {error}
-              </div>
-            )}
+            <div className="min-h-[60px]">
+              {error && (
+                <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl">
+                  {error}
+                </div>
+              )}
+            </div>
 
             {authMode === 'signup' && (
               <div>
