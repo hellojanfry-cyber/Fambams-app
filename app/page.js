@@ -367,7 +367,7 @@ export default function FamBamsApp() {
     </div>
   );
 
-  const AuthScreen = React.useMemo(() => () => (
+  const AuthScreen = () => (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 flex items-center justify-center p-4">
       <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden">
         <div className="bg-gradient-to-r from-yellow-400 via-orange-500 to-pink-500 p-8 text-center">
@@ -503,7 +503,7 @@ export default function FamBamsApp() {
               </div>
             )}
 
-            <form onSubmit={authMode === 'signin' ? handleSignIn : handleSignUp} className="space-y-4">
+            <form key="auth-form" onSubmit={authMode === 'signin' ? handleSignIn : handleSignUp} className="space-y-4">
               {authMode === 'signup' && (
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-2">
@@ -586,7 +586,7 @@ export default function FamBamsApp() {
         )}
       </div>
     </div>
-  ), [authMode, userType, showForgotPassword, loading, error, successMessage]);
+  );
 
   const ParentDashboard = () => {
     if (!familyData) {
