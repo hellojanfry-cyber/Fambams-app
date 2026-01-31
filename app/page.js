@@ -554,7 +554,7 @@ export default function FamBamsApp() {
                               className="text-xs bg-cyan-500 text-white px-2 py-1 rounded truncate cursor-pointer hover:bg-cyan-600 transition-colors"
                               title="Click for details"
                             >
-                              {event.activity}
+                              {event.kidName}
                             </div>
                           ))}
                           {dayEvents.length > 2 && (
