@@ -116,7 +116,7 @@ export default function AuthScreen({
               <img src="https://i.postimg.cc/L5Ggh0Tt/Logo.png" alt="FamBams Logo" style={{width: '176px', height: 'auto'}} />
             </div>
           </div>
-          <h2 className="text-white text-xl font-bold mt-4">Family Schedule</h2>
+          <h2 className="text-white text-xl font-bold mt-4">Family Events Schedule</h2>
           <p className="text-white/90 text-sm mt-2">Keep everyone in sync</p>
         </div>
 
