@@ -512,11 +512,13 @@ export default function FamBamsApp() {
                 Their Email Address
               </label>
               <input
+                key="invite-email-input"
                 type="email"
                 value={inviteEmail}
                 onChange={(e) => setInviteEmail(e.target.value)}
                 placeholder="family@example.com"
                 className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-blue-500 focus:outline-none transition-all"
+                autoComplete="off"
               />
             </div>
 
@@ -634,7 +636,7 @@ export default function FamBamsApp() {
             </div>
             <div className="flex items-center gap-4">
               <div className="bg-white p-3 rounded-2xl shadow-lg">
-                <img src="https://i.postimg.cc/L5Ggh0Tt/Logo.png" alt="FamBams" style={{width: '120px', height: 'auto'}} />
+                <img src="https://i.postimg.cc/L5Ggh0Tt/Logo.png" alt="FamBamz" style={{width: '120px', height: 'auto'}} />
               </div>
               <button
                 onClick={handleSignOut}
@@ -844,11 +846,13 @@ export default function FamBamsApp() {
                     Child's Name
                   </label>
                   <input
+                    key="add-child-input"
                     type="text"
                     value={newChildName}
                     onChange={(e) => setNewChildName(e.target.value)}
                     placeholder="Enter name"
                     className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-cyan-500 focus:outline-none"
+                    autoComplete="off"
                     autoFocus
                   />
                 </div>
@@ -1122,7 +1126,7 @@ export default function FamBamsApp() {
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-yellow-50 via-orange-50 to-pink-50">
         <div className="text-center">
           <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-cyan-500 mx-auto mb-4"></div>
-          <p className="text-gray-600 font-semibold">Loading FamBams...</p>
+          <p className="text-gray-600 font-semibold">Loading FamBamz...</p>
         </div>
       </div>
     );

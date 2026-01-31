@@ -113,7 +113,7 @@ export default function AuthScreen({
         <div className="bg-gradient-to-r from-yellow-400 via-orange-500 to-pink-500 p-8 text-center">
           <div className="flex justify-center mb-4">
             <div className="bg-white p-4 rounded-2xl shadow-lg">
-              <img src="https://i.postimg.cc/L5Ggh0Tt/Logo.png" alt="FamBams Logo" style={{width: '176px', height: 'auto'}} />
+              <img src="https://i.postimg.cc/L5Ggh0Tt/Logo.png" alt="FamBamz Logo" style={{width: '176px', height: 'auto'}} />
             </div>
           </div>
           <h2 className="text-white text-xl font-bold mt-4">Family Events Schedule</h2>

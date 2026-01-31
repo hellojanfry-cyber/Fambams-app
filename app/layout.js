@@ -1,7 +1,7 @@
 import './globals.css'
 
 export const metadata = {
-  title: 'FamBams - Family Schedule',
+  title: 'FamBamz - Family Schedule',
   description: 'Keep your family connected with shared schedules',
 }
 
