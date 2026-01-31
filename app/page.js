@@ -28,8 +28,6 @@ export default function FamBamsApp() {
   const [selectedActivity, setSelectedActivity] = useState(null);
   const [showEventDetailsModal, setShowEventDetailsModal] = useState(false);
   const [selectedEventDetails, setSelectedEventDetails] = useState(null);
-  const [inviteEmail, setInviteEmail] = useState('');
-  const [inviteRelationship, setInviteRelationship] = useState('grandmother');
   const [pendingInvitations, setPendingInvitations] = useState([]);
   const [showInvitationsModal, setShowInvitationsModal] = useState(false);
   const [newChildName, setNewChildName] = useState('');
@@ -173,8 +171,8 @@ export default function FamBamsApp() {
   };
 
   // Send invitation
-  const handleSendInvitation = async () => {
-    if (!inviteEmail.trim()) {
+  const handleSendInvitation = async (email, relationship) => {
+    if (!email.trim()) {
       alert('Please enter an email address');
       return;
     }
@@ -183,16 +181,14 @@ export default function FamBamsApp() {
     const result = await sendInvitation(
       currentUser.uid,
       userData.displayName || currentUser.email,
-      inviteEmail.trim(),
-      inviteRelationship,
+      email.trim(),
+      relationship,
       userData.familyId
     );
     
     if (result.success) {
-      alert(`Invitation sent to ${inviteEmail}!`);
+      alert(`Invitation sent to ${email}!`);
       setShowInviteModal(false);
-      setInviteEmail('');
-      setInviteRelationship('grandmother');
     } else {
       alert(`Error sending invitation: ${result.error}`);
     }
@@ -810,17 +806,9 @@ export default function FamBamsApp() {
         {showInviteModal && (
           <InviteModal
             key="invite-modal-stable"
-            inviteEmail={inviteEmail}
-            setInviteEmail={setInviteEmail}
-            inviteRelationship={inviteRelationship}
-            setInviteRelationship={setInviteRelationship}
             relationshipOptions={relationshipOptions}
             onSend={handleSendInvitation}
-            onClose={() => {
-              setShowInviteModal(false);
-              setInviteEmail('');
-              setInviteRelationship('grandmother');
-            }}
+            onClose={() => setShowInviteModal(false)}
             loading={loading}
           />
         )}

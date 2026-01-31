@@ -1,18 +1,21 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import { X, Heart } from 'lucide-react';
 
 const InviteModal = React.memo(function InviteModal({ 
-  inviteEmail, 
-  setInviteEmail, 
-  inviteRelationship, 
-  setInviteRelationship,
   relationshipOptions,
   onSend,
   onClose,
   loading 
 }) {
+  const [email, setEmail] = useState('');
+  const [relationship, setRelationship] = useState('grandmother');
+
+  const handleSend = () => {
+    onSend(email, relationship);
+  };
+
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-3xl w-full max-w-md">
@@ -37,8 +40,8 @@ const InviteModal = React.memo(function InviteModal({
               Relationship to Your Kids
             </label>
             <select
-              value={inviteRelationship}
-              onChange={(e) => setInviteRelationship(e.target.value)}
+              value={relationship}
+              onChange={(e) => setRelationship(e.target.value)}
               className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-blue-500 focus:outline-none transition-all bg-white"
             >
               {relationshipOptions.map(option => (
@@ -47,7 +50,7 @@ const InviteModal = React.memo(function InviteModal({
                 </option>
               ))}
             </select>
-            {inviteRelationship === 'sibling-parent' && (
+            {relationship === 'sibling-parent' && (
               <p className="text-xs text-blue-600 mt-2">
                 ⭐ Full Access: Can add/edit kids and activities
               </p>
@@ -60,8 +63,8 @@ const InviteModal = React.memo(function InviteModal({
             </label>
             <input
               type="email"
-              value={inviteEmail}
-              onChange={(e) => setInviteEmail(e.target.value)}
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
               placeholder="family@example.com"
               className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-blue-500 focus:outline-none transition-all"
               autoComplete="off"
@@ -69,7 +72,7 @@ const InviteModal = React.memo(function InviteModal({
           </div>
 
           <button
-            onClick={onSend}
+            onClick={handleSend}
             disabled={loading}
             className="w-full bg-gradient-to-r from-cyan-400 to-blue-500 text-white font-bold py-4 rounded-xl shadow-lg hover:shadow-xl transition-all disabled:opacity-50"
           >
