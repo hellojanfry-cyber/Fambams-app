@@ -809,6 +809,7 @@ export default function FamBamsApp() {
         {showInvitationsModal && <PendingInvitationsModal />}
         {showInviteModal && (
           <InviteModal
+            key="invite-modal-stable"
             inviteEmail={inviteEmail}
             setInviteEmail={setInviteEmail}
             inviteRelationship={inviteRelationship}

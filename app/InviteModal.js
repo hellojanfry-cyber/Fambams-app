@@ -3,7 +3,7 @@
 import React from 'react';
 import { X, Heart } from 'lucide-react';
 
-export default function InviteModal({ 
+const InviteModal = React.memo(function InviteModal({ 
   inviteEmail, 
   setInviteEmail, 
   inviteRelationship, 
@@ -79,4 +79,6 @@ export default function InviteModal({
       </div>
     </div>
   );
-}
+});
+
+export default InviteModal;
