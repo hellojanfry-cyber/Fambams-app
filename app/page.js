@@ -512,10 +512,9 @@ export default function FamBamsApp() {
                 Their Email Address
               </label>
               <input
-                key="invite-email-input"
                 type="email"
-                value={inviteEmail}
-                onChange={(e) => setInviteEmail(e.target.value)}
+                defaultValue={inviteEmail}
+                onInput={(e) => setInviteEmail(e.target.value)}
                 placeholder="family@example.com"
                 className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-blue-500 focus:outline-none transition-all"
                 autoComplete="off"
@@ -846,10 +845,9 @@ export default function FamBamsApp() {
                     Child's Name
                   </label>
                   <input
-                    key="add-child-input"
                     type="text"
-                    value={newChildName}
-                    onChange={(e) => setNewChildName(e.target.value)}
+                    defaultValue={newChildName}
+                    onInput={(e) => setNewChildName(e.target.value)}
                     placeholder="Enter name"
                     className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-cyan-500 focus:outline-none"
                     autoComplete="off"
