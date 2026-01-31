@@ -7,6 +7,7 @@ import { onAuthStateChanged } from 'firebase/auth';
 import { auth } from '../lib/firebase';
 import { signUpUser, signInUser, signOutUser, resetPassword, getUserData, getCompleteFamilyData } from '../lib/auth';
 import { addKid, deleteKid, addActivity, updateActivity, deleteActivity, addRecurringActivity } from '../lib/activities';
+import { sendInvitation, getPendingInvitations, acceptInvitation, declineInvitation } from '../lib/invitations';
 import AuthScreen from './AuthScreen';
 import AddActivityModal from './AddActivityModal';
 import EditActivityModal from './EditActivityModal';
@@ -28,6 +29,8 @@ export default function FamBamsApp() {
   const [selectedEventDetails, setSelectedEventDetails] = useState(null);
   const [inviteEmail, setInviteEmail] = useState('');
   const [inviteRelationship, setInviteRelationship] = useState('grandmother');
+  const [pendingInvitations, setPendingInvitations] = useState([]);
+  const [showInvitationsModal, setShowInvitationsModal] = useState(false);
   const [newChildName, setNewChildName] = useState('');
   const [selectedPhoto, setSelectedPhoto] = useState(null);
   const [photoPreview, setPhotoPreview] = useState(null);
@@ -36,6 +39,7 @@ export default function FamBamsApp() {
 
 
   const relationshipOptions = [
+    { value: 'sibling-parent', label: 'Sibling Parent (Full Access)' },
     { value: 'grandmother', label: 'Grandmother' },
     { value: 'grandfather', label: 'Grandfather' },
     { value: 'great-grandmother', label: 'Great-Grandmother' },
@@ -59,8 +63,8 @@ export default function FamBamsApp() {
 
   // Refresh family data
   const refreshFamilyData = async () => {
-    if (userData && userData.familyId) {
-      const result = await getCompleteFamilyData(userData.familyId);
+    if (currentUser) {
+      const result = await getCompleteFamilyData(currentUser.uid);
       if (result.success) {
         setFamilyData(result.data);
       }
@@ -77,15 +81,22 @@ export default function FamBamsApp() {
         if (userDataResult.success) {
           setUserData(userDataResult.data);
           
-          // Load complete family data if user is parent
-          if (userDataResult.data.userType === 'parent') {
-            const familyDataResult = await getCompleteFamilyData(userDataResult.data.familyId);
-            if (familyDataResult.success) {
-              setFamilyData(familyDataResult.data);
+          // Check for pending invitations
+          const invitationsResult = await getPendingInvitations(user.email);
+          if (invitationsResult.success && invitationsResult.invitations.length > 0) {
+            setPendingInvitations(invitationsResult.invitations);
+            setShowInvitationsModal(true);
+          }
+          
+          // Load complete family data (from all connected families)
+          const familyDataResult = await getCompleteFamilyData(user.uid);
+          if (familyDataResult.success) {
+            setFamilyData(familyDataResult.data);
+            if (userDataResult.data.userType === 'parent') {
               setCurrentScreen('parent-dashboard');
+            } else if (userDataResult.data.userType === 'viewer') {
+              setCurrentScreen('viewer-schedule');
             }
-          } else if (userDataResult.data.userType === 'viewer') {
-            setCurrentScreen('viewer-schedule');
           }
         }
       } else {
@@ -151,6 +162,74 @@ export default function FamBamsApp() {
       await refreshFamilyData();
     } else {
       alert(`Error deleting child: ${result.error}`);
+    }
+    setLoading(false);
+  };
+
+  // Send invitation
+  const handleSendInvitation = async () => {
+    if (!inviteEmail.trim()) {
+      alert('Please enter an email address');
+      return;
+    }
+
+    setLoading(true);
+    const result = await sendInvitation(
+      currentUser.uid,
+      userData.displayName || currentUser.email,
+      inviteEmail.trim(),
+      inviteRelationship,
+      userData.familyId
+    );
+    
+    if (result.success) {
+      alert(`Invitation sent to ${inviteEmail}!`);
+      setShowInviteModal(false);
+      setInviteEmail('');
+      setInviteRelationship('grandmother');
+    } else {
+      alert(`Error sending invitation: ${result.error}`);
+    }
+    setLoading(false);
+  };
+
+  // Accept invitation
+  const handleAcceptInvitation = async (invitationId) => {
+    setLoading(true);
+    const result = await acceptInvitation(invitationId, currentUser.uid);
+    
+    if (result.success) {
+      // Remove from pending list
+      setPendingInvitations(prev => prev.filter(inv => inv.id !== invitationId));
+      
+      // Refresh family data to show new connected families
+      await refreshFamilyData();
+      
+      // Close modal if no more invitations
+      if (pendingInvitations.length === 1) {
+        setShowInvitationsModal(false);
+      }
+    } else {
+      alert(`Error accepting invitation: ${result.error}`);
+    }
+    setLoading(false);
+  };
+
+  // Decline invitation
+  const handleDeclineInvitation = async (invitationId) => {
+    setLoading(true);
+    const result = await declineInvitation(invitationId);
+    
+    if (result.success) {
+      // Remove from pending list
+      setPendingInvitations(prev => prev.filter(inv => inv.id !== invitationId));
+      
+      // Close modal if no more invitations
+      if (pendingInvitations.length === 1) {
+        setShowInvitationsModal(false);
+      }
+    } else {
+      alert(`Error declining invitation: ${result.error}`);
     }
     setLoading(false);
   };
@@ -318,6 +397,137 @@ export default function FamBamsApp() {
 
 
 
+  // Pending Invitations Modal
+  const PendingInvitationsModal = () => {
+    if (pendingInvitations.length === 0) return null;
+    
+    return (
+      <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+        <div className="bg-white rounded-3xl w-full max-w-md max-h-[80vh] overflow-y-auto">
+          <div className="bg-gradient-to-r from-yellow-400 via-orange-500 to-pink-500 p-6 sticky top-0">
+            <div className="flex justify-between items-center">
+              <h2 className="text-2xl font-bold text-white">Family Invitations</h2>
+              <button
+                onClick={() => setShowInvitationsModal(false)}
+                className="text-white hover:bg-white/20 p-2 rounded-lg transition-colors"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+            <p className="text-white/90 text-sm mt-2">
+              You have {pendingInvitations.length} pending invitation{pendingInvitations.length > 1 ? 's' : ''}
+            </p>
+          </div>
+
+          <div className="p-6 space-y-4">
+            {pendingInvitations.map(invitation => (
+              <div key={invitation.id} className="border-2 border-gray-200 rounded-xl p-4">
+                <div className="mb-3">
+                  <p className="font-bold text-gray-800">{invitation.fromUserName}</p>
+                  <p className="text-sm text-gray-600">
+                    wants you to view their family schedule as their{' '}
+                    <span className="font-semibold">
+                      {relationshipOptions.find(r => r.value === invitation.relationship)?.label || invitation.relationship}
+                    </span>
+                  </p>
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => handleAcceptInvitation(invitation.id)}
+                    disabled={loading}
+                    className="flex-1 bg-gradient-to-r from-green-400 to-green-500 text-white font-bold py-3 rounded-xl shadow hover:shadow-lg transition-all disabled:opacity-50"
+                  >
+                    Accept
+                  </button>
+                  <button
+                    onClick={() => handleDeclineInvitation(invitation.id)}
+                    disabled={loading}
+                    className="flex-1 bg-gradient-to-r from-red-400 to-red-500 text-white font-bold py-3 rounded-xl shadow hover:shadow-lg transition-all disabled:opacity-50"
+                  >
+                    Decline
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  // Invite Modal (Updated)
+  const InviteModal = () => {
+    return (
+      <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+        <div className="bg-white rounded-3xl w-full max-w-md">
+          <div className="bg-gradient-to-r from-yellow-400 via-orange-500 to-pink-500 p-6">
+            <div className="flex justify-between items-center">
+              <div className="flex items-center gap-2">
+                <Heart className="w-6 h-6 text-white" />
+                <h2 className="text-2xl font-bold text-white">Invite Family Member</h2>
+              </div>
+              <button
+                onClick={() => {
+                  setShowInviteModal(false);
+                  setInviteEmail('');
+                  setInviteRelationship('grandmother');
+                }}
+                className="text-white hover:bg-white/20 p-2 rounded-lg transition-colors"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+          </div>
+
+          <div className="p-6 space-y-4">
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                Relationship to Your Kids
+              </label>
+              <select
+                value={inviteRelationship}
+                onChange={(e) => setInviteRelationship(e.target.value)}
+                className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-blue-500 focus:outline-none transition-all bg-white"
+              >
+                {relationshipOptions.map(option => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+              {inviteRelationship === 'sibling-parent' && (
+                <p className="text-xs text-blue-600 mt-2">
+                  ⭐ Full Access: Can add/edit kids and activities
+                </p>
+              )}
+            </div>
+
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                Their Email Address
+              </label>
+              <input
+                type="email"
+                value={inviteEmail}
+                onChange={(e) => setInviteEmail(e.target.value)}
+                placeholder="family@example.com"
+                className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-blue-500 focus:outline-none transition-all"
+              />
+            </div>
+
+            <button
+              onClick={handleSendInvitation}
+              disabled={loading}
+              className="w-full bg-gradient-to-r from-cyan-400 to-blue-500 text-white font-bold py-4 rounded-xl shadow-lg hover:shadow-xl transition-all disabled:opacity-50"
+            >
+              {loading ? 'Sending...' : 'Send Invitation'}
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   // Event Details Modal
   const EventDetailsModal = () => {
     if (!selectedEventDetails) return null;
@@ -467,7 +677,7 @@ export default function FamBamsApp() {
             ))}
           </div>
 
-          <div className="grid md:grid-cols-2 gap-6 mb-6">
+          <div className="grid md:grid-cols-3 gap-4 mb-6">
             <button
               onClick={() => setShowAddChildModal(true)}
               className="bg-white rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all flex items-center justify-center gap-3 text-cyan-600 font-bold"
@@ -482,6 +692,13 @@ export default function FamBamsApp() {
             >
               <Plus className="w-6 h-6" />
               Add Activity
+            </button>
+            <button
+              onClick={() => setShowInviteModal(true)}
+              className="bg-gradient-to-r from-pink-400 to-purple-500 text-white rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all flex items-center justify-center gap-3 font-bold"
+            >
+              <Send className="w-6 h-6" />
+              Invite Family
             </button>
           </div>
 
@@ -654,6 +871,8 @@ export default function FamBamsApp() {
           </div>
         )}
 
+        {showInvitationsModal && <PendingInvitationsModal />}
+        {showInviteModal && <InviteModal />}
         {showEventDetailsModal && <EventDetailsModal />}
         {showAddActivityModal && (
           <AddActivityModal 
