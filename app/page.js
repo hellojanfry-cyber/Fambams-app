@@ -82,10 +82,15 @@ export default function FamBamsApp() {
           setUserData(userDataResult.data);
           
           // Check for pending invitations
+          console.log('Checking invitations for:', user.email);
           const invitationsResult = await getPendingInvitations(user.email);
+          console.log('Invitations result:', invitationsResult);
           if (invitationsResult.success && invitationsResult.invitations.length > 0) {
+            console.log('Setting pending invitations:', invitationsResult.invitations);
             setPendingInvitations(invitationsResult.invitations);
             setShowInvitationsModal(true);
+          } else {
+            console.log('No pending invitations found or error occurred');
           }
           
           // Load complete family data (from all connected families)
@@ -896,6 +901,200 @@ export default function FamBamsApp() {
   };
 
   const ViewerSchedule = () => {
+    // If viewer has connected families, show them the calendar
+    if (familyData && familyData.kids && familyData.kids.length > 0) {
+      const kids = familyData.kids || [];
+      const events = familyData.events || [];
+      
+      // Filter events for current month
+      const today = new Date();
+      const targetDate = new Date(today.getFullYear(), today.getMonth() + currentMonth, 1);
+      const year = targetDate.getFullYear();
+      const month = targetDate.getMonth();
+      
+      const monthEvents = events.filter(event => {
+        const eventDate = new Date(event.date);
+        return eventDate.getFullYear() === year && eventDate.getMonth() === month;
+      }).filter(event => selectedKid === 'all' || event.kidId === selectedKid);
+
+      return (
+        <div className="min-h-screen bg-gradient-to-br from-yellow-50 via-orange-50 to-pink-50 p-4">
+          <div className="max-w-7xl mx-auto">
+            {/* Header */}
+            <div className="bg-gradient-to-r from-yellow-400 via-orange-500 to-pink-500 rounded-3xl p-6 mb-6 shadow-xl flex justify-between items-center">
+              <div>
+                <h1 className="text-4xl font-bold text-white mb-2">Family Schedule</h1>
+                <p className="text-white/90">View-only access</p>
+              </div>
+              <button
+                onClick={handleSignOut}
+                className="flex items-center gap-2 bg-white/20 hover:bg-white/30 text-white font-bold py-3 px-6 rounded-xl transition-all"
+              >
+                <LogOut className="w-5 h-5" />
+                Sign Out
+              </button>
+            </div>
+
+            {/* Kids Filter */}
+            <div className="bg-white rounded-2xl p-4 mb-6 shadow-lg overflow-x-auto">
+              <div className="flex gap-3 min-w-max">
+                <button
+                  onClick={() => setSelectedKid('all')}
+                  className={`px-6 py-3 rounded-xl font-bold transition-all ${
+                    selectedKid === 'all'
+                      ? 'bg-gradient-to-r from-cyan-400 to-blue-500 text-white shadow-lg'
+                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  }`}
+                >
+                  All Kids
+                </button>
+                {kids.map(kid => (
+                  <button
+                    key={kid.id}
+                    onClick={() => setSelectedKid(kid.id)}
+                    className={`px-6 py-3 rounded-xl font-bold transition-all ${
+                      selectedKid === kid.id
+                        ? 'bg-gradient-to-r from-cyan-400 to-blue-500 text-white shadow-lg'
+                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    }`}
+                  >
+                    {kid.name}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Calendar and List - same as parent view but read-only */}
+            <div className="grid lg:grid-cols-2 gap-6">
+              {/* Calendar */}
+              <div className="bg-white rounded-3xl p-6 shadow-lg">
+                <div className="flex items-center justify-between mb-6">
+                  <button
+                    onClick={() => setCurrentMonth(currentMonth - 1)}
+                    className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                  >
+                    <ChevronLeft className="w-6 h-6 text-gray-600" />
+                  </button>
+                  <h3 className="text-2xl font-bold text-gray-800">
+                    {targetDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+                  </h3>
+                  <button
+                    onClick={() => setCurrentMonth(currentMonth + 1)}
+                    className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                  >
+                    <ChevronRight className="w-6 h-6 text-gray-600" />
+                  </button>
+                </div>
+
+                <div className="grid grid-cols-7 gap-2">
+                  {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
+                    <div key={day} className="text-center font-bold text-gray-600 text-sm py-2">
+                      {day}
+                    </div>
+                  ))}
+                  {Array.from({ length: new Date(year, month, 1).getDay() }).map((_, i) => (
+                    <div key={`empty-${i}`} />
+                  ))}
+                  {Array.from({ length: new Date(year, month + 1, 0).getDate() }).map((_, i) => {
+                    const day = i + 1;
+                    const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                    const dayEvents = monthEvents.filter(e => e.date === dateStr).slice(0, 2);
+                    
+                    return (
+                      <div
+                        key={day}
+                        className="aspect-square p-2 border-2 border-gray-100 rounded-lg hover:bg-gray-50 transition-colors"
+                      >
+                        <div className="text-sm font-semibold text-gray-700 mb-1">{day}</div>
+                        <div className="space-y-1">
+                          {dayEvents.map(event => (
+                            <div
+                              key={event.id}
+                              onClick={() => {
+                                setSelectedEventDetails(event);
+                                setShowEventDetailsModal(true);
+                              }}
+                              className="text-xs bg-cyan-500 text-white px-2 py-1 rounded truncate cursor-pointer hover:bg-cyan-600 transition-colors"
+                              title="Click for details"
+                            >
+                              {event.kidName}
+                            </div>
+                          ))}
+                          {dayEvents.length > 2 && (
+                            <div className="text-xs text-cyan-600 font-semibold">
+                              +{dayEvents.length - 2} more
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Activities List */}
+              <div className="bg-white rounded-3xl p-6 shadow-lg">
+                <h3 className="text-2xl font-bold text-gray-800 mb-4">
+                  {selectedKid === 'all' ? 'All Activities' : `${kids.find(k => k.id === selectedKid)?.name}'s Activities`}
+                </h3>
+                {monthEvents.length === 0 ? (
+                  <div className="text-center py-12">
+                    <Calendar className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+                    <p className="text-gray-600 text-lg">No activities scheduled for this month</p>
+                  </div>
+                ) : (
+                  <div className="grid gap-4">
+                    {monthEvents
+                      .sort((a, b) => new Date(a.date) - new Date(b.date))
+                      .map(event => (
+                        <div
+                          key={event.id}
+                          className="bg-gradient-to-r from-cyan-50 to-blue-50 rounded-2xl p-4 shadow hover:shadow-lg transition-all cursor-pointer"
+                          onClick={() => {
+                            setSelectedEventDetails(event);
+                            setShowEventDetailsModal(true);
+                          }}
+                        >
+                          <div className="flex justify-between items-start mb-2">
+                            <h4 className="font-bold text-gray-800 text-lg">{event.activity}</h4>
+                            <span className="bg-cyan-500 text-white text-sm font-bold px-3 py-1 rounded-full">
+                              {event.kidName}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-4 text-gray-600 text-sm">
+                            <div className="flex items-center gap-1">
+                              <Calendar className="w-4 h-4" />
+                              {new Date(event.date).toLocaleDateString('en-US', { 
+                                weekday: 'short', 
+                                month: 'short', 
+                                day: 'numeric' 
+                              })}
+                            </div>
+                            {event.time && (
+                              <div className="flex items-center gap-1">
+                                <Clock className="w-4 h-4" />
+                                {formatTime(event.time)}
+                              </div>
+                            )}
+                            {event.location && (
+                              <div className="flex items-center gap-1">
+                                <MapPin className="w-4 h-4" />
+                                {event.location}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    // No family connections yet - show waiting screen
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 flex items-center justify-center p-4">
         <div className="bg-white rounded-3xl p-12 shadow-2xl text-center max-w-md">
@@ -940,6 +1139,9 @@ export default function FamBamsApp() {
       )}
       {currentScreen === 'parent-dashboard' && <ParentDashboard />}
       {currentScreen === 'viewer-schedule' && <ViewerSchedule />}
+      
+      {/* Invitations modal - shows for all users */}
+      {showInvitationsModal && <PendingInvitationsModal />}
     </div>
   );
 }
