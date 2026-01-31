@@ -8,6 +8,8 @@ import { auth } from '../lib/firebase';
 import { signUpUser, signInUser, signOutUser, resetPassword, getUserData, getCompleteFamilyData } from '../lib/auth';
 import { addKid, deleteKid, addActivity, updateActivity, deleteActivity, addRecurringActivity } from '../lib/activities';
 import AuthScreen from './AuthScreen';
+import AddActivityModal from './AddActivityModal';
+import EditActivityModal from './EditActivityModal';
 
 export default function FamBamsApp() {
   const [currentScreen, setCurrentScreen] = useState('loading');
@@ -29,16 +31,7 @@ export default function FamBamsApp() {
   const [photoPreview, setPhotoPreview] = useState(null);
   const [loading, setLoading] = useState(false);
   
-  const [activityForm, setActivityForm] = useState({
-    activity: '',
-    date: '',
-    time: '',
-    location: '',
-    kidId: '',
-    recurring: false,
-    recurrencePattern: 'weekly',
-    occurrences: 12
-  });
+
 
   const relationshipOptions = [
     { value: 'grandmother', label: 'Grandmother' },
@@ -50,12 +43,7 @@ export default function FamBamsApp() {
     { value: 'cousin', label: 'Cousin' },
   ];
 
-  const recurrenceOptions = [
-    { value: 'daily', label: 'Daily' },
-    { value: 'weekly', label: 'Weekly' },
-    { value: 'biweekly', label: 'Bi-weekly' },
-    { value: 'monthly', label: 'Monthly' },
-  ];
+
 
   // Refresh family data
   const refreshFamilyData = async () => {
@@ -156,57 +144,39 @@ export default function FamBamsApp() {
   };
 
   const handleOpenAddActivity = () => {
-    // Reset form
-    setActivityForm({
-      activity: '',
-      date: '',
-      time: '',
-      location: '',
-      kidId: familyData?.kids?.[0]?.id || '',
-      recurring: false,
-      recurrencePattern: 'weekly',
-      occurrences: 12
-    });
     setShowAddActivityModal(true);
   };
 
-  const handleAddActivity = async () => {
-    if (!activityForm.activity || !activityForm.date || !activityForm.time || !activityForm.location || !activityForm.kidId) {
-      alert('Please fill in all fields');
-      return;
-    }
-
-    setLoading(true);
-
-    const kid = familyData.kids.find(k => k.id === activityForm.kidId);
+  const handleAddActivity = async (formData) => {
+    const kid = familyData.kids.find(k => k.id === formData.kidId);
     
     let result;
-    if (activityForm.recurring) {
+    if (formData.recurring) {
       result = await addRecurringActivity(
         userData.familyId,
-        activityForm.kidId,
+        formData.kidId,
         kid.name,
         {
-          activity: activityForm.activity,
-          date: activityForm.date,
-          time: activityForm.time,
-          location: activityForm.location
+          activity: formData.activity,
+          date: formData.date,
+          time: formData.time,
+          location: formData.location
         },
         {
-          pattern: activityForm.recurrencePattern,
-          occurrences: activityForm.occurrences
+          pattern: formData.recurrencePattern,
+          occurrences: formData.occurrences
         }
       );
     } else {
       result = await addActivity(
         userData.familyId,
-        activityForm.kidId,
+        formData.kidId,
         kid.name,
         {
-          activity: activityForm.activity,
-          date: activityForm.date,
-          time: activityForm.time,
-          location: activityForm.location
+          activity: formData.activity,
+          date: formData.date,
+          time: formData.time,
+          location: formData.location
         }
       );
     }
@@ -217,37 +187,19 @@ export default function FamBamsApp() {
     } else {
       alert(`Error adding activity: ${result.error}`);
     }
-    setLoading(false);
   };
 
   const handleOpenEditActivity = (activity) => {
     setSelectedActivity(activity);
-    setActivityForm({
-      activity: activity.activity,
-      date: activity.date,
-      time: activity.time,
-      location: activity.location,
-      kidId: activity.kidId,
-      recurring: false,
-      recurrencePattern: 'weekly',
-      occurrences: 12
-    });
     setShowEditActivityModal(true);
   };
 
-  const handleEditActivity = async () => {
-    if (!activityForm.activity || !activityForm.date || !activityForm.time || !activityForm.location) {
-      alert('Please fill in all fields');
-      return;
-    }
-
-    setLoading(true);
-
-    const result = await updateActivity(selectedActivity.id, {
-      activity: activityForm.activity,
-      date: activityForm.date,
-      time: activityForm.time,
-      location: activityForm.location
+  const handleEditActivity = async (activityId, formData) => {
+    const result = await updateActivity(activityId, {
+      activity: formData.activity,
+      date: formData.date,
+      time: formData.time,
+      location: formData.location
     });
 
     if (result.success) {
@@ -257,7 +209,6 @@ export default function FamBamsApp() {
     } else {
       alert(`Error updating activity: ${result.error}`);
     }
-    setLoading(false);
   };
 
   const handleDeleteActivity = async (activityId) => {
@@ -350,248 +301,9 @@ export default function FamBamsApp() {
     </div>
   );
 
-  // Add Activity Modal
-  const AddActivityModal = () => (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-3xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
-        <div className="bg-gradient-to-r from-yellow-400 via-orange-500 to-pink-500 p-6">
-          <div className="flex justify-between items-center">
-            <h2 className="text-2xl font-bold text-white">Add Activity</h2>
-            <button
-              onClick={() => setShowAddActivityModal(false)}
-              className="text-white hover:bg-white/20 p-2 rounded-lg transition-colors"
-            >
-              <X className="w-6 h-6" />
-            </button>
-          </div>
-        </div>
 
-        <div className="p-6 space-y-4">
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">
-              Child
-            </label>
-            <select
-              value={activityForm.kidId}
-              onChange={(e) => setActivityForm({...activityForm, kidId: e.target.value})}
-              className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-cyan-500 focus:outline-none"
-            >
-              <option value="">Select a child</option>
-              {kids.map(kid => (
-                <option key={kid.id} value={kid.id}>{kid.name}</option>
-              ))}
-            </select>
-          </div>
 
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">
-              Activity Name
-            </label>
-            <input
-              type="text"
-              value={activityForm.activity}
-              onChange={(e) => setActivityForm({...activityForm, activity: e.target.value})}
-              placeholder="Soccer practice"
-              className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-cyan-500 focus:outline-none"
-            />
-          </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
-                Date
-              </label>
-              <input
-                type="date"
-                value={activityForm.date}
-                onChange={(e) => setActivityForm({...activityForm, date: e.target.value})}
-                className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-cyan-500 focus:outline-none"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
-                Time
-              </label>
-              <input
-                type="time"
-                value={activityForm.time}
-                onChange={(e) => setActivityForm({...activityForm, time: e.target.value})}
-                className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-cyan-500 focus:outline-none"
-              />
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">
-              Location
-            </label>
-            <input
-              type="text"
-              value={activityForm.location}
-              onChange={(e) => setActivityForm({...activityForm, location: e.target.value})}
-              placeholder="Community Center"
-              className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-cyan-500 focus:outline-none"
-            />
-          </div>
-
-          <div className="border-t pt-4">
-            <label className="flex items-center gap-2 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={activityForm.recurring}
-                onChange={(e) => setActivityForm({...activityForm, recurring: e.target.checked})}
-                className="w-5 h-5 text-cyan-500 rounded focus:ring-2 focus:ring-cyan-500"
-              />
-              <span className="font-semibold text-gray-700">Recurring Activity</span>
-            </label>
-          </div>
-
-          {activityForm.recurring && (
-            <div className="space-y-4 pl-7">
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Repeat Pattern
-                </label>
-                <select
-                  value={activityForm.recurrencePattern}
-                  onChange={(e) => setActivityForm({...activityForm, recurrencePattern: e.target.value})}
-                  className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-cyan-500 focus:outline-none"
-                >
-                  {recurrenceOptions.map(opt => (
-                    <option key={opt.value} value={opt.value}>{opt.label}</option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Number of Occurrences
-                </label>
-                <input
-                  type="number"
-                  min="1"
-                  max="52"
-                  value={activityForm.occurrences}
-                  onChange={(e) => setActivityForm({...activityForm, occurrences: parseInt(e.target.value)})}
-                  className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-cyan-500 focus:outline-none"
-                />
-              </div>
-            </div>
-          )}
-
-          <div className="flex gap-3 pt-4">
-            <button
-              onClick={() => setShowAddActivityModal(false)}
-              className="flex-1 px-6 py-3 border-2 border-gray-300 text-gray-700 font-bold rounded-xl hover:bg-gray-50 transition-colors"
-            >
-              Cancel
-            </button>
-            <button
-              onClick={handleAddActivity}
-              disabled={loading}
-              className="flex-1 bg-gradient-to-r from-cyan-400 to-blue-500 text-white font-bold py-3 rounded-xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {loading ? 'Adding...' : 'Add Activity'}
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-
-  // Edit Activity Modal
-  const EditActivityModal = () => (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-3xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
-        <div className="bg-gradient-to-r from-yellow-400 via-orange-500 to-pink-500 p-6">
-          <div className="flex justify-between items-center">
-            <h2 className="text-2xl font-bold text-white">Edit Activity</h2>
-            <button
-              onClick={() => {
-                setShowEditActivityModal(false);
-                setSelectedActivity(null);
-              }}
-              className="text-white hover:bg-white/20 p-2 rounded-lg transition-colors"
-            >
-              <X className="w-6 h-6" />
-            </button>
-          </div>
-        </div>
-
-        <div className="p-6 space-y-4">
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">
-              Activity Name
-            </label>
-            <input
-              type="text"
-              value={activityForm.activity}
-              onChange={(e) => setActivityForm({...activityForm, activity: e.target.value})}
-              className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-cyan-500 focus:outline-none"
-            />
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
-                Date
-              </label>
-              <input
-                type="date"
-                value={activityForm.date}
-                onChange={(e) => setActivityForm({...activityForm, date: e.target.value})}
-                className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-cyan-500 focus:outline-none"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
-                Time
-              </label>
-              <input
-                type="time"
-                value={activityForm.time}
-                onChange={(e) => setActivityForm({...activityForm, time: e.target.value})}
-                className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-cyan-500 focus:outline-none"
-              />
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">
-              Location
-            </label>
-            <input
-              type="text"
-              value={activityForm.location}
-              onChange={(e) => setActivityForm({...activityForm, location: e.target.value})}
-              className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-cyan-500 focus:outline-none"
-            />
-          </div>
-
-          <div className="flex gap-3 pt-4">
-            <button
-              onClick={() => {
-                setShowEditActivityModal(false);
-                setSelectedActivity(null);
-              }}
-              className="flex-1 px-6 py-3 border-2 border-gray-300 text-gray-700 font-bold rounded-xl hover:bg-gray-50 transition-colors"
-            >
-              Cancel
-            </button>
-            <button
-              onClick={handleEditActivity}
-              disabled={loading}
-              className="flex-1 bg-gradient-to-r from-cyan-400 to-blue-500 text-white font-bold py-3 rounded-xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {loading ? 'Saving...' : 'Save Changes'}
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
 
   const ParentDashboard = () => {
     // Get events for current month
@@ -833,8 +545,23 @@ export default function FamBamsApp() {
           </div>
         )}
 
-        {showAddActivityModal && <AddActivityModal />}
-        {showEditActivityModal && <EditActivityModal />}
+        {showAddActivityModal && (
+          <AddActivityModal 
+            kids={kids}
+            onAdd={handleAddActivity}
+            onClose={() => setShowAddActivityModal(false)}
+          />
+        )}
+        {showEditActivityModal && selectedActivity && (
+          <EditActivityModal 
+            activity={selectedActivity}
+            onEdit={handleEditActivity}
+            onClose={() => {
+              setShowEditActivityModal(false);
+              setSelectedActivity(null);
+            }}
+          />
+        )}
       </div>
     );
   };
