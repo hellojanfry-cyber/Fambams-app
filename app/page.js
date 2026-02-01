@@ -586,27 +586,31 @@ export default function FamBamsApp() {
             >
               All Kids
             </button>
-            {kids.map(kid => (
-              <div key={kid.id} className="relative group">
-                <button
-                  onClick={() => setSelectedKid(kid.id)}
-                  className={`px-6 py-3 rounded-xl font-semibold whitespace-nowrap transition-all ${
-                    selectedKid === kid.id
-                      ? 'bg-gradient-to-r from-cyan-400 to-blue-500 text-white shadow-lg'
-                      : 'bg-white text-gray-700 hover:bg-gray-50 shadow'
-                  }`}
-                >
-                  {kid.name}
-                </button>
-                <button
-                  onClick={() => handleDeleteKid(kid.id)}
-                  className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-lg hover:bg-red-600"
-                  title="Delete child"
-                >
-                  ✕
-                </button>
-              </div>
-            ))}
+            {console.log('Kids for buttons:', kids)}
+            {kids.map(kid => {
+              console.log('Rendering kid button:', kid);
+              return (
+                <div key={kid.id} className="relative group">
+                  <button
+                    onClick={() => setSelectedKid(kid.id)}
+                    className={`px-6 py-3 rounded-xl font-semibold whitespace-nowrap transition-all ${
+                      selectedKid === kid.id
+                        ? 'bg-gradient-to-r from-cyan-400 to-blue-500 text-white shadow-lg'
+                        : 'bg-white text-gray-700 hover:bg-gray-50 shadow'
+                    }`}
+                  >
+                    {kid.name}
+                  </button>
+                  <button
+                    onClick={() => handleDeleteKid(kid.id)}
+                    className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-lg hover:bg-red-600"
+                    title="Delete child"
+                  >
+                    ✕
+                  </button>
+                </div>
+              );
+            })}
           </div>
 
           <div className="grid md:grid-cols-3 gap-4 mb-6">
