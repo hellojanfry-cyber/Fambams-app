@@ -138,7 +138,9 @@ export default function FamBamsApp() {
     }
 
     setLoading(true);
-    const result = await addKid(userData.familyId, newChildName.trim());
+    // Use ownFamilyId (original family) instead of familyId
+    const familyIdToUse = userData.ownFamilyId || userData.familyId;
+    const result = await addKid(familyIdToUse, newChildName.trim());
     
     if (result.success) {
       setNewChildName('');
